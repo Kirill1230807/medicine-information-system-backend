@@ -17,4 +17,9 @@ public interface AppointmentRepository extends JpaRepository<Appointment,UUID> {
 
     // Отримати всі записи конкретного лікаря з певним статусом (наприклад, 'SCHEDULED')
     List<Appointment> findByDoctorIdAndStatus(UUID doctorId, String status);
+
+    // Видалити всі записи лікаря/пацієнта (використовується при видаленні їхнього акаунта)
+    void deleteByDoctorId(UUID doctorId);
+
+    void deleteByPatientId(UUID patientId);
 }

@@ -4,10 +4,12 @@ import com.bank.medicineinformationsystembackend.dto.doctor.*;
 import com.bank.medicineinformationsystembackend.entity.Doctor;
 import com.bank.medicineinformationsystembackend.entity.User;
 import com.bank.medicineinformationsystembackend.mapper.DoctorMapper;
+import com.bank.medicineinformationsystembackend.service.CurrentUserService;
 import com.bank.medicineinformationsystembackend.service.DoctorService;
 import com.bank.medicineinformationsystembackend.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,11 +22,14 @@ public class DoctorController {
 
     private final DoctorService doctorService;
     private final UserService userService;
+    private final CurrentUserService currentUserService;
     private final DoctorMapper doctorMapper;
 
-    public DoctorController(DoctorService doctorService, UserService userService, DoctorMapper doctorMapper) {
+    public DoctorController(DoctorService doctorService, UserService userService,
+                            CurrentUserService currentUserService, DoctorMapper doctorMapper) {
         this.doctorService = doctorService;
         this.userService = userService;
+        this.currentUserService = currentUserService;
         this.doctorMapper = doctorMapper;
     }
 
@@ -33,6 +38,15 @@ public class DoctorController {
         return doctorService.getAllDoctors().stream()
                 .map(doctorMapper::toDto)
                 .collect(Collectors.toList());
+    }
+
+    // Власний профіль лікаря. Оголошений вище "/{id}", тому Spring завжди
+    // віддає перевагу цьому статичному шляху перед шаблоном з параметром.
+    @GetMapping("/me")
+    public DoctorResponseDTO getMyDoctorProfile(Authentication authentication) {
+        User user = currentUserService.require(authentication);
+        Doctor doctor = doctorService.getDoctorByUserId(user.getId());
+        return doctorMapper.toDto(doctor);
     }
 
     @GetMapping("/{id}")
@@ -61,8 +75,10 @@ public class DoctorController {
         return doctorMapper.toDto(savedDoctor);
     }
 
+    // Адмін може редагувати будь-якого лікаря; сам лікар - тільки власний профіль
+    // (спеціалізацію й кабінет), а не чужі.
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or @doctorSecurity.isSelf(#id, authentication)")
     public DoctorResponseDTO updateDoctor(@PathVariable UUID id, @RequestBody DoctorCreateDTO dto) {
         Doctor updatedData = doctorMapper.toEntity(dto);
         Doctor savedDoctor = doctorService.updateDoctor(id, updatedData);

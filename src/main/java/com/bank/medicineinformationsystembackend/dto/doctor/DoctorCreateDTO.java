@@ -8,8 +8,6 @@ import java.util.UUID;
 @Setter
 public class DoctorCreateDTO {
     private UUID userId;
-    private String firstName;
-    private String lastName;
     private String specialization;
     private String cabinetNumber;
 }

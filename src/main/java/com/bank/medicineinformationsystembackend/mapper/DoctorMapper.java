@@ -9,9 +9,13 @@ import org.mapstruct.Mapping;
 public interface DoctorMapper {
 
     @Mapping(source = "user.id", target = "userId")
+    @Mapping(source = "user.firstName", target = "firstName")
+    @Mapping(source = "user.lastName", target = "lastName")
     DoctorResponseDTO toDto(Doctor doctor);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "user", ignore = true)
+    @Mapping(target = "firstName", ignore = true)
+    @Mapping(target = "lastName", ignore = true)
     Doctor toEntity(DoctorCreateDTO dto);
 }

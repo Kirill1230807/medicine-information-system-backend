@@ -1,0 +1,205 @@
+{
+  "realm": "medical-realm",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": true,
+  "roles": {
+    "realm": [
+      {
+        "name": "ADMIN",
+        "description": "Administrator"
+      },
+      {
+        "name": "DOCTOR",
+        "description": "Doctor"
+      },
+      {
+        "name": "PATIENT",
+        "description": "Patient"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "medical-client",
+      "name": "Medical Information System",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "medical-client-dev-secret",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "rootUrl": "http://localhost:8080",
+      "redirectUris": [
+        "http://localhost:8080/*"
+      ],
+      "webOrigins": [
+        "http://localhost:8080"
+      ],
+      "attributes": {
+        "post.logout.redirect.uris": "http://localhost:8080/*"
+      },
+      "protocolMappers": [
+        {
+          "name": "realm-roles-flat",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "claim.name": "roles",
+            "jsonType.label": "String",
+            "multivalued": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        },
+        {
+          "name": "given-name-access-token",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-property-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "firstName",
+            "claim.name": "given_name",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        },
+        {
+          "name": "family-name-access-token",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-property-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "lastName",
+            "claim.name": "family_name",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "medical-backend",
+      "name": "Medical backend (Keycloak Admin API)",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "medical-backend-dev-secret",
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true
+    }
+  ],
+  "users": [
+    {
+      "username": "admin.user",
+      "enabled": true,
+      "email": "admin@medical.com",
+      "emailVerified": true,
+      "firstName": "Admin",
+      "lastName": "User",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "ADMIN"
+      ]
+    },
+    {
+      "username": "doctor.user",
+      "enabled": true,
+      "email": "doctor@medical.com",
+      "emailVerified": true,
+      "firstName": "Doctor",
+      "lastName": "User",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "doctor",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "DOCTOR"
+      ]
+    },
+    {
+      "username": "patient.user",
+      "enabled": true,
+      "email": "patient@medical.com",
+      "emailVerified": true,
+      "firstName": "Patient",
+      "lastName": "User",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "patient",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "PATIENT"
+      ]
+    },
+    {
+      "username": "service-account-medical-backend",
+      "enabled": true,
+      "serviceAccountClientId": "medical-backend",
+      "clientRoles": {
+        "realm-management": [
+          "manage-users",
+          "view-users",
+          "query-users",
+          "view-realm"
+        ]
+      }
+    },
+    {
+      "username": "doctor2.user",
+      "enabled": true,
+      "email": "doctor2@medical.com",
+      "emailVerified": true,
+      "firstName": "Olha",
+      "lastName": "Shevchenko",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "doctor2",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "DOCTOR"
+      ]
+    },
+    {
+      "username": "patient2.user",
+      "enabled": true,
+      "email": "patient2@medical.com",
+      "emailVerified": true,
+      "firstName": "Taras",
+      "lastName": "Kravets",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "patient2",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "PATIENT"
+      ]
+    }
+  ]
+}

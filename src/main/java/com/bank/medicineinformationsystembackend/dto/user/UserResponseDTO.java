@@ -9,6 +9,8 @@ import java.util.UUID;
 public class UserResponseDTO {
     private UUID id;
     private String email;
+    private String firstName;
+    private String lastName;
     private String role;
     private String externalId;
 }

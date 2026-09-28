@@ -2,15 +2,21 @@ package com.bank.medicineinformationsystembackend.service;
 
 import com.bank.medicineinformationsystembackend.entity.Appointment;
 import com.bank.medicineinformationsystembackend.repository.AppointmentRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
 public class AppointmentService {
+
+    private static final Set<String> ALLOWED_STATUSES = Set.of("SCHEDULED", "COMPLETED", "CANCELLED");
+
     private final AppointmentRepository appointmentRepository;
 
     public AppointmentService(AppointmentRepository appointmentRepository) {
@@ -30,12 +36,14 @@ public class AppointmentService {
 
     @Transactional
     public Appointment createAppointment(Appointment appointment) {
-        if (appointment.getStatus() == null || appointment.getStatus().isEmpty()) {
-            appointment.setStatus("SCHEDULED");
-        }
 
+        appointment.setStatus("SCHEDULED");
+
+        if (appointment.getAppointmentDatetime() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Не вказано дату і час прийому");
+        }
         if (appointment.getAppointmentDatetime().isBefore(ZonedDateTime.now())) {
-            throw new RuntimeException("Неможливо створити запис на минулий час");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Неможливо створити запис на минулий час");
         }
 
         return appointmentRepository.save(appointment);
@@ -45,10 +53,19 @@ public class AppointmentService {
     public Appointment updateAppointment(UUID id, Appointment updatedData) {
         Appointment existingAppointment = getAppointmentById(id);
 
-        existingAppointment.setAppointmentDatetime(updatedData.getAppointmentDatetime());
+        if (updatedData.getAppointmentDatetime() != null) {
+            if (updatedData.getAppointmentDatetime().isBefore(ZonedDateTime.now())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Неможливо перенести запис на минулий час");
+            }
+            existingAppointment.setAppointmentDatetime(updatedData.getAppointmentDatetime());
+        }
         existingAppointment.setNotes(updatedData.getNotes());
 
         if (updatedData.getStatus() != null) {
+            if (!ALLOWED_STATUSES.contains(updatedData.getStatus())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Допустимі статуси: SCHEDULED, COMPLETED, CANCELLED");
+            }
             existingAppointment.setStatus(updatedData.getStatus());
         }
 
@@ -77,5 +94,4 @@ public class AppointmentService {
     public List<Appointment> getDoctorAppointmentsByStatus(UUID doctorId, String status) {
         return appointmentRepository.findByDoctorIdAndStatus(doctorId, status);
     }
-
 }

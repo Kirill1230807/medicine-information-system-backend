@@ -12,5 +12,6 @@ public class AppointmentCreateDTO {
     private UUID doctorId;
     private UUID patientId;
     private ZonedDateTime appointmentDatetime;
+    private String status;
     private String notes;
 }

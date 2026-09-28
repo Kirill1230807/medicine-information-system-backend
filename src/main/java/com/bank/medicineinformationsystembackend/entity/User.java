@@ -20,8 +20,14 @@ public class User {
     @Column(nullable = false, unique = true)
     private String email;
 
+    @Column(name = "first_name")
+    private String firstName;
+
+    @Column(name = "last_name")
+    private String lastName;
+
     @Column(nullable = false)
-    private String role; // Наприклад: "ROLE_ADMIN", "ROLE_DOCTOR", "ROLE_PATIENT"
+    private String role;
 
     @Column(name = "external_id", unique = true)
     private String externalId;

@@ -1,10 +1,428 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <title>Hello World!</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Медична інформаційна система</title>
+    <style>
+        :root { --bg:#f4f6f8; --card:#fff; --border:#d9dee3; --text:#1f2933; --muted:#65727e; --primary:#1769aa; --danger:#c62828; }
+        * { box-sizing: border-box; }
+        body { margin:0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background:var(--bg); color:var(--text); }
+        header { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; padding:12px 24px; background:var(--primary); color:#fff; }
+        header h1 { margin:0; font-size:1.15rem; }
+        .user { display:flex; align-items:center; gap:12px; font-size:.9rem; }
+        main { max-width:1100px; margin:16px auto; padding:0 16px; }
+        nav { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+        button { font:inherit; padding:6px 14px; border:1px solid var(--primary); background:var(--primary); color:#fff; border-radius:6px; cursor:pointer; }
+        button.secondary { background:#fff; color:var(--primary); }
+        button.danger { background:#fff; color:var(--danger); border-color:var(--danger); }
+        button.tab-btn.active { background:var(--primary); color:#fff; }
+        header button { background:transparent; border-color:#fff; }
+        .toolbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+        .toolbar h2 { margin:0; font-size:1.1rem; }
+        .table-wrap { overflow-x:auto; }
+        table { width:100%; border-collapse:collapse; background:var(--card); border:1px solid var(--border); }
+        th, td { text-align:left; padding:9px 12px; border-bottom:1px solid var(--border); font-size:.92rem; vertical-align:top; }
+        th { background:#eef1f4; }
+        td.actions { white-space:nowrap; text-align:right; }
+        td.empty { text-align:center; color:var(--muted); }
+        .banner { padding:10px 14px; border-radius:6px; margin-bottom:10px; }
+        .banner.info { background:#e8f1fb; color:#0d3b66; border:1px solid #b6d3f0; }
+        .banner.error { background:#fdecea; color:#7f1d1d; border:1px solid #f5c2c0; }
+        #toast { position:fixed; bottom:20px; right:20px; padding:10px 16px; border-radius:6px; color:#fff; background:#2e7d32; display:none; z-index:10; max-width:80vw; }
+        #toast.error { background:var(--danger); }
+        dialog { border:1px solid var(--border); border-radius:10px; padding:20px; width:min(460px, 92vw); }
+        dialog::backdrop { background:rgba(0,0,0,.35); }
+        dialog h3 { margin-top:0; }
+        label { display:block; margin-bottom:12px; font-size:.9rem; }
+        input, select, textarea { width:100%; padding:7px; margin-top:4px; border:1px solid var(--border); border-radius:6px; font:inherit; }
+        td.actions select { width:auto; margin:0 6px 0 0; padding:5px; }
+        .dlg-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:8px; }
+    </style>
 </head>
 <body>
-<h1>Hello World!</h1>
+<header>
+    <h1>Медична інформаційна система</h1>
+    <div class="user">
+        <span id="userInfo"></span>
+        <form action="/logout" method="post"><button type="submit">Вийти</button></form>
+    </div>
+</header>
+
+<main>
+    <div id="roleBanner" class="banner info" style="display:none"></div>
+    <nav id="tabs">
+        <button class="tab-btn secondary" data-tab="doctors" type="button">Лікарі</button>
+        <button class="tab-btn secondary" data-tab="patients" type="button">Пацієнти</button>
+        <button class="tab-btn secondary" data-tab="appointments" type="button">Записи на прийом</button>
+        <button class="tab-btn secondary" data-tab="users" type="button">Користувачі</button>
+    </nav>
+    <div id="content"></div>
+</main>
+
+<dialog id="dlg">
+    <form id="form">
+        <h3 id="dlgTitle"></h3>
+        <div id="fields"></div>
+        <div class="dlg-actions">
+            <button type="button" class="secondary" id="cancelBtn">Скасувати</button>
+            <button type="submit">Зберегти</button>
+        </div>
+    </form>
+</dialog>
+
+<div id="toast"></div>
+
+<script>
+    'use strict';
+
+    // ---------- API ----------
+    async function api(method, path, body) {
+        const res = await fetch(path, {
+            method,
+            headers: body !== undefined ? { 'Content-Type': 'application/json', 'Accept': 'application/json' } : { 'Accept': 'application/json' },
+            body: body !== undefined ? JSON.stringify(body) : undefined
+        });
+        if (res.status === 401) {            // сесія завершилась -> знову на логін через Keycloak
+            window.location.href = '/';
+            throw new Error('Сесія завершилась');
+        }
+        if (res.status === 403) throw new Error('403: недостатньо прав для цієї дії (потрібна інша роль)');
+        if (!res.ok) {
+            const known = { 400: 'Некоректний запит', 404: 'Не знайдено', 502: 'Keycloak недоступний або відхилив запит' };
+            let detail = null;
+            try { detail = (await res.clone().json()).detail; } catch (e) { /* тіло не JSON або немає ProblemDetail */ }
+            throw new Error(detail || known[res.status] || 'Помилка сервера (' + res.status + ')');
+        }
+        return res.status === 204 ? null : res.json();
+    }
+
+    // ---------- helpers ----------
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+    const parseDate = iso => new Date(String(iso).replace(/\[.*\]$/, ''));
+    const fmtDate = iso => iso ? parseDate(iso).toLocaleString('uk-UA') : '—';
+    const toLocalInput = iso => {
+        const d = parseDate(iso), p = n => String(n).padStart(2, '0');
+        return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+    };
+    const byId = (list, id) => list.find(x => x.id === id);
+    const ROLE_LABELS = { ROLE_ADMIN: 'Адміністратор', ROLE_DOCTOR: 'Лікар', ROLE_PATIENT: 'Пацієнт', ROLE_USER: 'Без ролі' };
+    const roleLabel = r => ROLE_LABELS[r] || r;
+    const STATUS_LABELS = { SCHEDULED: 'Заплановано', COMPLETED: 'Завершено', CANCELLED: 'Скасовано' };
+    const statusLabel = s => STATUS_LABELS[s] || s;
+    const todayStr = () => new Date().toISOString().slice(0, 10);
+
+    let toastTimer;
+    function notify(text, isError) {
+        const t = document.getElementById('toast');
+        t.textContent = text;
+        t.className = isError ? 'error' : '';
+        t.style.display = 'block';
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => { t.style.display = 'none'; }, 4000);
+    }
+
+    // ---------- state ----------
+    const state = { doctors: [], patients: [], appointments: [], users: [] };
+    const errors = {};
+    let current = 'doctors';
+    let editing = null;
+
+    const shortId = id => String(id).slice(0, 8) + '…';
+    const userLabel = id => { const u = byId(state.users, id); return u ? u.email : shortId(id); };
+    const availableUsersForRole = (role, assignedUserIds) =>
+        state.users.filter(u => u.role === role && !assignedUserIds.has(u.id)).map(u => [u.id, u.email]);
+    const doctorName = id => { const d = byId(state.doctors, id); return d ? `${d.lastName} ${d.firstName} (${d.specialization})` : shortId(id); };
+    const patientName = id => { const p = byId(state.patients, id); return p ? `${p.lastName} ${p.firstName}` : shortId(id); };
+
+    // ---------- entity config (залежить від ролі, тож будується після /me) ----------
+    let myRole = null, myUserId = null, myDoctorId = null, myPatientId = null;
+    let cfg = {};
+
+    function buildCfg() {
+        const isAdmin = myRole === 'ROLE_ADMIN';
+        const isDoctor = myRole === 'ROLE_DOCTOR';
+        const isPatient = myRole === 'ROLE_PATIENT';
+
+        const doctors = {
+            title: 'Лікарі', singular: 'лікаря', path: '/api/doctors',
+            canAdd: isAdmin,
+            canEdit: d => isAdmin || (isDoctor && d.userId === myUserId),
+            canDelete: () => isAdmin,
+            columns: [
+                ['Прізвище', d => d.lastName], ['Ім’я', d => d.firstName], ['Спеціалізація', d => d.specialization],
+                ['Кабінет', d => d.cabinetNumber || '—'], ['Користувач', d => userLabel(d.userId)]
+            ],
+            fields: [
+                { name: 'userId', label: 'Користувач (акаунт з роллю «Лікар»)', type: 'select', required: true, createOnly: true,
+                    options: () => availableUsersForRole('ROLE_DOCTOR', new Set(state.doctors.map(d => d.userId))) },
+                { name: 'specialization', label: 'Спеціалізація', required: true },
+                { name: 'cabinetNumber', label: 'Кабінет' }
+            ]
+        };
+
+        // Пацієнт бачить і редагує лише власний профіль; повний список - тільки персонал.
+        const patients = isPatient ? {
+            title: 'Мій профіль пацієнта', singular: 'профіль', path: '/api/patients/me', single: true,
+            emptyMessage: 'Адміністратор ще не створив ваш профіль пацієнта.',
+            canAdd: false, canEdit: () => true, canDelete: () => false,
+            columns: [
+                ['Прізвище', p => p.lastName], ['Ім’я', p => p.firstName],
+                ['Телефон', p => p.phoneNumber || '—'], ['Дата народження', p => p.dateOfBirth || '—']
+            ],
+            fields: [
+                { name: 'phoneNumber', label: 'Телефон', type: 'tel', pattern: '[0-9+()\\-\\s]*',
+                    hint: 'Лише цифри, пробіли, +, - та дужки' },
+                { name: 'dateOfBirth', label: 'Дата народження', type: 'date', max: todayStr() }
+            ]
+        } : {
+            title: 'Пацієнти', singular: 'пацієнта', path: '/api/patients',
+            canAdd: isAdmin, canEdit: () => isAdmin, canDelete: () => isAdmin,
+            columns: [
+                ['Прізвище', p => p.lastName], ['Ім’я', p => p.firstName], ['Телефон', p => p.phoneNumber || '—'],
+                ['Дата народження', p => p.dateOfBirth || '—'], ['Користувач', p => userLabel(p.userId)]
+            ],
+            fields: [
+                { name: 'userId', label: 'Користувач (акаунт з роллю «Пацієнт»)', type: 'select', required: true, createOnly: true,
+                    options: () => availableUsersForRole('ROLE_PATIENT', new Set(state.patients.map(p => p.userId))) },
+                { name: 'phoneNumber', label: 'Телефон', type: 'tel', pattern: '[0-9+()\\-\\s]*',
+                    hint: 'Лише цифри, пробіли, +, - та дужки' },
+                { name: 'dateOfBirth', label: 'Дата народження', type: 'date', max: todayStr() }
+            ]
+        };
+
+        // Дату/час і статус запису призначає лише персонал (адмін або лікар, і лише до себе).
+        // Пацієнт бачить тільки власні записи і не може їх редагувати.
+        const appointments = {
+            title: 'Записи на прийом', singular: 'запис',
+            path: isAdmin ? '/api/appointments'
+                : isDoctor ? (myDoctorId ? `/api/appointments/doctor/${myDoctorId}` : null)
+                    : isPatient ? (myPatientId ? `/api/appointments/patient/${myPatientId}` : null)
+                        : null,
+            emptyMessage: isDoctor && !myDoctorId ? 'Адміністратор ще не створив ваш профіль лікаря.'
+                : isPatient && !myPatientId ? 'Адміністратор ще не створив ваш профіль пацієнта.'
+                    : 'Немає даних',
+            canAdd: isAdmin || isDoctor,
+            canEdit: a => isAdmin || (isDoctor && a.doctorId === myDoctorId),
+            canDelete: () => isAdmin,
+            columns: [
+                ['Дата і час', a => fmtDate(a.appointmentDatetime)], ['Лікар', a => doctorName(a.doctorId)],
+                ['Пацієнт', a => patientName(a.patientId)], ['Статус', a => statusLabel(a.status)], ['Нотатки', a => a.notes || '—']
+            ],
+            fields: [
+                { name: 'doctorId', label: 'Лікар', type: 'select', required: true, createOnly: true,
+                    options: () => (isDoctor ? state.doctors.filter(d => d.id === myDoctorId) : state.doctors)
+                        .map(d => [d.id, doctorName(d.id)]) },
+                { name: 'patientId', label: 'Пацієнт', type: 'select', required: true, createOnly: true,
+                    options: () => state.patients.map(p => [p.id, patientName(p.id)]) },
+                { name: 'appointmentDatetime', label: 'Дата і час', type: 'datetime', required: true },
+                { name: 'status', label: 'Статус', type: 'select', updateOnly: true,
+                    options: () => [['SCHEDULED', 'Заплановано'], ['COMPLETED', 'Завершено'], ['CANCELLED', 'Скасовано']] },
+                { name: 'notes', label: 'Нотатки', type: 'textarea' }
+            ]
+        };
+
+        const users = {
+            title: 'Користувачі та ролі (лише для ADMIN)', path: '/api/users',
+            canAdd: false, canEdit: () => false, canDelete: () => false,
+            columns: [['Email', u => u.email], ['Роль', u => roleLabel(u.role)], ['External ID (Keycloak sub)', u => u.externalId || '—']],
+            // адмін призначає роль лікаря або пацієнта (адміністраторів не чіпаємо)
+            rowActions: u => u.role === 'ROLE_ADMIN' ? '' :
+                `<select data-role-select="${esc(u.id)}">` +
+                [['DOCTOR', 'Лікар'], ['PATIENT', 'Пацієнт']].map(([v, t]) =>
+                    `<option value="${v}"${u.role === 'ROLE_' + v ? ' selected' : ''}>${t}</option>`).join('') +
+                `</select><button type="button" data-role-apply="${esc(u.id)}">Призначити</button> ` +
+                `<button class="danger" type="button" data-user-del="${esc(u.id)}" data-user-role="${esc(u.role)}">Видалити</button>`,
+            fields: []
+        };
+
+        const result = { doctors, patients, appointments };
+        if (isAdmin) result.users = users;
+        return result;
+    }
+
+    // ---------- loading & rendering ----------
+    async function loadAll() {
+        const keys = Object.keys(cfg);
+        const results = await Promise.allSettled(keys.map(k => {
+            const c = cfg[k];
+            if (!c.path) return Promise.resolve(c.single ? null : []);
+            return api('GET', c.path);
+        }));
+        results.forEach((r, i) => {
+            const k = keys[i];
+            if (r.status === 'fulfilled') {
+                const value = r.value;
+                state[k] = cfg[k].single ? (value ? [value] : []) : value;
+                delete errors[k];
+            } else if (cfg[k].single && /^Не знайдено/.test(r.reason.message)) {
+                // очікувана ситуація: профіль ще не створено адміністратором
+                state[k] = [];
+                delete errors[k];
+            } else {
+                state[k] = [];
+                errors[k] = r.reason.message;
+            }
+        });
+        if (!cfg[current]) current = Object.keys(cfg)[0];
+        render();
+    }
+
+    function render() {
+        document.querySelectorAll('.tab-btn').forEach(b => {
+            const visible = !!cfg[b.dataset.tab];
+            b.style.display = visible ? '' : 'none';
+            b.classList.toggle('active', b.dataset.tab === current);
+            b.classList.toggle('secondary', b.dataset.tab !== current);
+        });
+        const c = cfg[current];
+        let html = `<div class="toolbar"><h2>${esc(c.title)}</h2>${c.canAdd ? '<button id="addBtn" type="button">+ Додати</button>' : ''}</div>`;
+        if (errors[current]) html += `<div class="banner error">${esc(errors[current])}</div>`;
+        html += '<div class="table-wrap"><table><thead><tr>' + c.columns.map(col => `<th>${esc(col[0])}</th>`).join('') + ((c.canAdd || c.canEdit || c.rowActions) ? '<th></th>' : '') + '</tr></thead><tbody>';
+        const rows = state[current];
+        if (!rows.length) html += `<tr><td class="empty" colspan="${c.columns.length + 1}">${esc(c.emptyMessage || 'Немає даних')}</td></tr>`;
+        rows.forEach(r => {
+            html += '<tr>' + c.columns.map(col => `<td>${esc(col[1](r))}</td>`).join('');
+            if (c.rowActions) {
+                html += `<td class="actions">${c.rowActions(r)}</td>`;
+            } else {
+                const canEdit = c.canEdit && c.canEdit(r);
+                const canDelete = c.canDelete && c.canDelete(r);
+                html += '<td class="actions">' +
+                    (canEdit ? `<button class="secondary" type="button" data-edit="${esc(r.id)}">Змінити</button> ` : '') +
+                    (canDelete ? `<button class="danger" type="button" data-del="${esc(r.id)}">Видалити</button>` : '') +
+                    '</td>';
+            }
+            html += '</tr>';
+        });
+        html += '</tbody></table></div>';
+        document.getElementById('content').innerHTML = html;
+    }
+
+    // ---------- create / update / delete ----------
+    function visibleFields(c, item) {
+        return c.fields.filter(f => (item ? !f.createOnly : !f.updateOnly));
+    }
+
+    function openForm(id) {
+        const c = cfg[current];
+        const item = id ? byId(state[current], id) : (c.single ? state[current][0] : null);
+        editing = { key: current, id: item ? item.id : null };
+        document.getElementById('dlgTitle').textContent = (item ? 'Змінити ' : 'Додати ') + c.singular;
+        document.getElementById('fields').innerHTML = visibleFields(c, item).map(f => {
+            const val = item ? (f.type === 'datetime' ? toLocalInput(item[f.name]) : (item[f.name] ?? '')) : '';
+            const req = f.required ? 'required' : '';
+            let input;
+            if (f.type === 'select') {
+                const opts = f.options();
+                input = `<select name="${f.name}" ${req}><option value="">${opts.length ? '— оберіть —' : '— немає доступних варіантів —'}</option>` +
+                    opts.map(([v, t]) => `<option value="${esc(v)}"${item && item[f.name] === v ? ' selected' : ''}>${esc(t)}</option>`).join('') + '</select>';
+            } else if (f.type === 'textarea') {
+                input = `<textarea name="${f.name}" rows="3" ${req}>${esc(val)}</textarea>`;
+            } else {
+                const type = f.type === 'datetime' ? 'datetime-local' : (f.type || 'text');
+                const min = (f.type === 'datetime' && !item) ? `min="${toLocalInput(new Date().toISOString())}"` : '';
+                const max = f.max ? `max="${f.max}"` : '';
+                const pattern = f.pattern ? `pattern="${esc(f.pattern)}"` : '';
+                input = `<input type="${type}" name="${f.name}" value="${esc(val)}" ${req} ${min} ${max} ${pattern}>`;
+            }
+            const hint = f.hint ? `<small style="color:var(--muted); display:block; margin-top:2px;">${esc(f.hint)}</small>` : '';
+            return `<label>${esc(f.label)}${input}${hint}</label>`;
+        }).join('');
+        document.getElementById('dlg').showModal();
+    }
+
+    async function remove(id) {
+        if (!confirm('Видалити запис?')) return;
+        try {
+            await api('DELETE', `${cfg[current].path}/${id}`);
+            notify('Видалено');
+            await loadAll();
+        } catch (err) { notify(err.message, true); }
+    }
+
+    async function assignRole(id) {
+        const sel = document.querySelector(`select[data-role-select="${id}"]`);
+        try {
+            await api('PUT', `/api/users/${id}/role`, { role: sel.value });
+            notify('Роль призначено. Користувач побачить її після повторного входу.');
+            await loadAll();
+        } catch (err) { notify(err.message, true); }
+    }
+
+    async function deleteUser(id, role) {
+        const warn = role === 'ROLE_DOCTOR'
+            ? 'Разом з користувачем будуть видалені всі його записи на прийом (як лікаря). Продовжити?'
+            : role === 'ROLE_PATIENT'
+                ? 'Разом з користувачем будуть видалені всі його записи на прийом (як пацієнта). Продовжити?'
+                : 'Видалити цього користувача?';
+        if (!confirm(warn)) return;
+        try {
+            await api('DELETE', `/api/users/${id}`);
+            notify('Користувача видалено');
+            await loadAll();
+        } catch (err) { notify(err.message, true); }
+    }
+
+    document.getElementById('form').addEventListener('submit', async e => {
+        e.preventDefault();
+        const c = cfg[editing.key];
+        const item = editing.id ? byId(state[editing.key], editing.id) : null;
+        const data = {};
+        visibleFields(c, item).forEach(f => {
+            let v = e.target.elements[f.name].value.trim();
+            if (f.type === 'datetime' && v) v = new Date(v).toISOString();
+            data[f.name] = v === '' ? null : v;
+        });
+        try {
+            if (editing.id) await api('PUT', `${c.path}/${editing.id}`, data);
+            else await api('POST', c.path, data);
+            document.getElementById('dlg').close();
+            notify('Збережено');
+            await loadAll();
+        } catch (err) { notify(err.message, true); }
+    });
+
+    // ---------- events ----------
+    document.getElementById('cancelBtn').addEventListener('click', () => document.getElementById('dlg').close());
+
+    document.getElementById('tabs').addEventListener('click', e => {
+        const b = e.target.closest('button[data-tab]');
+        if (b && cfg[b.dataset.tab]) { current = b.dataset.tab; render(); }
+    });
+
+    document.getElementById('content').addEventListener('click', e => {
+        const b = e.target.closest('button');
+        if (!b) return;
+        if (b.id === 'addBtn') openForm();
+        else if (b.dataset.edit) openForm(b.dataset.edit);
+        else if (b.dataset.del) remove(b.dataset.del);
+        else if (b.dataset.roleApply) assignRole(b.dataset.roleApply);
+        else if (b.dataset.userDel) deleteUser(b.dataset.userDel, b.dataset.userRole);
+    });
+
+    // ---------- init ----------
+    (async function init() {
+        try {
+            const me = await api('GET', '/api/users/me');   // заодно синхронізує поточного користувача в БД
+            myRole = me.role;
+            myUserId = me.id;
+            document.getElementById('userInfo').textContent = `${me.email} · ${roleLabel(me.role)}`;
+            if (me.role === 'ROLE_USER') {
+                const b = document.getElementById('roleBanner');
+                b.textContent = 'Ваш акаунт ще не має ролі. Зверніться до адміністратора, щоб отримати роль «Лікар» або «Пацієнт».';
+                b.style.display = 'block';
+            }
+            if (myRole === 'ROLE_DOCTOR') {
+                try { myDoctorId = (await api('GET', '/api/doctors/me')).id; } catch (e) { /* профілю ще немає */ }
+            } else if (myRole === 'ROLE_PATIENT') {
+                try { myPatientId = (await api('GET', '/api/patients/me')).id; } catch (e) { /* профілю ще немає */ }
+            }
+        } catch (e) { /* не критично */ }
+        cfg = buildCfg();
+        current = cfg.doctors ? 'doctors' : Object.keys(cfg)[0];
+        await loadAll();
+    })();
+</script>
 </body>
 </html>
