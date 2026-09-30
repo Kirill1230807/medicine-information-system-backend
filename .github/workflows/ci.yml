@@ -54,7 +54,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: D:\medicine-information-system-backend\docker-compose.yaml
+          file: ./Dockerfile
           push: false # Вимога: лише локальна збірка в межах раннера
           tags: medicine-backend:local-test
 
