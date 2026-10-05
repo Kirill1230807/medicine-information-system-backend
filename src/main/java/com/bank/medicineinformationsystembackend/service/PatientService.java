@@ -29,10 +29,7 @@ public class PatientService {
                 .orElseThrow(() -> new RuntimeException("Пацієнта з ID " + id + " не знайдено"));
     }
 
-    /**
-     * Ім'я та прізвище пацієнта не вводяться вручну: вони копіюються з акаунта
-     * (заповнені при реєстрації в Keycloak) на момент створення профілю.
-     */
+    //ім'я та прізвище пацієнта не вводяться вручну: вони копіюються з акаунта на момент створення профілю.
     @Transactional
     public Patient createPatient(Patient patient) {
         if (patient.getUser() != null && patient.getUser().getId() != null) {

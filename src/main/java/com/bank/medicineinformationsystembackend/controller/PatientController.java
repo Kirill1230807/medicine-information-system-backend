@@ -7,6 +7,7 @@ import com.bank.medicineinformationsystembackend.mapper.PatientMapper;
 import com.bank.medicineinformationsystembackend.service.CurrentUserService;
 import com.bank.medicineinformationsystembackend.service.PatientService;
 import com.bank.medicineinformationsystembackend.service.UserService;
+import com.bank.medicineinformationsystembackend.validation.annotation.AuthenticatedUser;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -44,11 +45,9 @@ public class PatientController {
                 .collect(Collectors.toList());
     }
 
-    // Власний профіль пацієнта. Оголошений вище "/{id}", тому Spring завжди
-    // віддає перевагу цьому статичному шляху перед шаблоном з параметром.
+
     @GetMapping("/me")
-    public PatientResponseDTO getMyPatientProfile(Authentication authentication) {
-        User user = currentUserService.require(authentication);
+    public PatientResponseDTO getMyPatientProfile(@AuthenticatedUser User user) {
         Patient patient = patientService.getPatientByUserId(user.getId());
         return patientMapper.toDto(patient);
     }

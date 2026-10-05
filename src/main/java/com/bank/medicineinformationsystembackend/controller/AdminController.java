@@ -11,10 +11,6 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/**
- * Доступ до /api/admin/** обмежується в SecurityFilterChain (hasRole("ADMIN")).
- * Тут навмисно немає @PreAuthorize, щоб було видно, що 403 дає саме фільтр.
- */
 @RestController
 @RequestMapping("/api/admin")
 public class AdminController {

@@ -52,11 +52,6 @@ public class UserController {
         return userMapper.toDto(user);
     }
 
-
-    /**
-     * Роль береться з authorities автентифікації (ROLE_* з токена Keycloak).
-     * Якщо їх кілька, пріоритет: ADMIN > DOCTOR > PATIENT.
-     */
     private String resolveRole(Authentication authentication) {
         Set<String> authorities = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)

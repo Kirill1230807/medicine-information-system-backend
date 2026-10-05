@@ -23,7 +23,7 @@ import java.util.Set;
 @Service
 public class KeycloakAdminService {
 
-    /** Ролі застосунку, якими керує адміністратор. Інші ролі користувача (default-roles, ADMIN) не чіпаємо. */
+    /** Ролі застосунку, якими керує адміністратор */
     private static final Set<String> APP_ROLES = Set.of("DOCTOR", "PATIENT");
 
     private final RestClient restClient = RestClient.create();

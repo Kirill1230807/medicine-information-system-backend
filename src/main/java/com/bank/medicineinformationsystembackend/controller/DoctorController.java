@@ -7,6 +7,7 @@ import com.bank.medicineinformationsystembackend.mapper.DoctorMapper;
 import com.bank.medicineinformationsystembackend.service.CurrentUserService;
 import com.bank.medicineinformationsystembackend.service.DoctorService;
 import com.bank.medicineinformationsystembackend.service.UserService;
+import com.bank.medicineinformationsystembackend.validation.annotation.AdminCreateEndpoint;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -40,7 +41,7 @@ public class DoctorController {
                 .collect(Collectors.toList());
     }
 
-    // Власний профіль лікаря. Оголошений вище "/{id}", тому Spring завжди
+    // власний профіль лікаря. Оголошений "/{id}", тому Spring завжди
     // віддає перевагу цьому статичному шляху перед шаблоном з параметром.
     @GetMapping("/me")
     public DoctorResponseDTO getMyDoctorProfile(Authentication authentication) {
@@ -62,9 +63,7 @@ public class DoctorController {
                 .collect(Collectors.toList());
     }
 
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("hasRole('ADMIN')")
+    @AdminCreateEndpoint
     public DoctorResponseDTO createDoctor(@RequestBody DoctorCreateDTO dto) {
         Doctor doctor = doctorMapper.toEntity(dto);
 
@@ -75,8 +74,7 @@ public class DoctorController {
         return doctorMapper.toDto(savedDoctor);
     }
 
-    // Адмін може редагувати будь-якого лікаря; сам лікар - тільки власний профіль
-    // (спеціалізацію й кабінет), а не чужі.
+    // Адмін може редагувати будь-якого лікаря. лікар тільки себе (спеціалізацію, кабінет)
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or @doctorSecurity.isSelf(#id, authentication)")
     public DoctorResponseDTO updateDoctor(@PathVariable UUID id, @RequestBody DoctorCreateDTO dto) {

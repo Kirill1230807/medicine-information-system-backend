@@ -40,12 +40,10 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
 
-                // OIDC-логін через Keycloak
                 .oauth2Login(oauth2 -> oauth2
                         .defaultSuccessUrl("/", true)
                 )
 
-                // Вихід і завершення сесії застосунку і сесії Keycloak., редирект на головну сторінку
                 .logout(logout -> logout
                         .logoutSuccessHandler(oidcLogoutSuccessHandler(clientRegistrationRepository))
                 )
@@ -54,7 +52,6 @@ public class SecurityConfig {
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
                 )
 
-                // API-клієнти без автентифікації отримують 401, а не редирект на логін.
                 .exceptionHandling(ex -> ex
                         .defaultAuthenticationEntryPointFor(
                                 new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED),
@@ -72,9 +69,6 @@ public class SecurityConfig {
         return handler;
     }
 
-    /**
-     * Ролі для JWT: claim "roles" (його додає mapper у Keycloak) -> ROLE_<роль>.
-     */
     @Bean
     public JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtGrantedAuthoritiesConverter grantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
@@ -86,9 +80,6 @@ public class SecurityConfig {
         return jwtAuthenticationConverter;
     }
 
-    /**
-     * Ролі для OIDC-сесії (UI): claim "roles" з ID-токена -> ROLE_<роль>.
-     */
     @Bean
     public GrantedAuthoritiesMapper userAuthoritiesMapper() {
         return authorities -> {

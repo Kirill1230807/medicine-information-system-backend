@@ -8,6 +8,7 @@ import com.bank.medicineinformationsystembackend.mapper.AppointmentMapper;
 import com.bank.medicineinformationsystembackend.service.AppointmentService;
 import com.bank.medicineinformationsystembackend.service.DoctorService;
 import com.bank.medicineinformationsystembackend.service.PatientService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -36,7 +37,6 @@ public class AppointmentController {
     }
 
     // Повний список усіх записів - лише для адміністратора.
-    // Лікар і пацієнт користуються своїми "звуженими" ендпоінтами нижче.
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     public List getAllAppointments() {
@@ -54,7 +54,7 @@ public class AppointmentController {
         return appointmentMapper.toDto(appointment);
     }
 
-    // Персонал (адмін, лікар) бачить записи пацієнта; сам пацієнт - лише власні.
+    // адмін і лікар бачить записи пацієнта. пацієнт - лише свої
     @GetMapping("/patient/{patientId}")
     @PreAuthorize("hasAnyRole('ADMIN','DOCTOR') or @patientSecurity.isSelf(#patientId, authentication)")
     public List getAppointmentsByPatient(@PathVariable UUID patientId) {
@@ -63,7 +63,7 @@ public class AppointmentController {
                 .collect(Collectors.toList());
     }
 
-    // Розклад лікаря бачить адмін і сам цей лікар, а не хтось інший.
+    // розклад лікаря бачить адмін і сам цей лікар
     @GetMapping("/doctor/{doctorId}")
     @PreAuthorize("hasRole('ADMIN') or @doctorSecurity.isSelf(#doctorId, authentication)")
     public List getAppointmentsByDoctor(@PathVariable UUID doctorId) {
@@ -72,13 +72,12 @@ public class AppointmentController {
                 .collect(Collectors.toList());
     }
 
-    // Дату й час запису призначає лише персонал (адмін або лікар).
-    // Лікар може записувати пацієнтів тільки до себе, а не до колег.
+    // адмін і лікар можуть призначити запис
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasRole('ADMIN') " +
             "or (hasRole('DOCTOR') and @doctorSecurity.isSelf(#dto.doctorId, authentication))")
-    public AppointmentResponseDTO createAppointment(@RequestBody AppointmentCreateDTO dto) {
+    public AppointmentResponseDTO createAppointment(@Valid @RequestBody AppointmentCreateDTO dto) {
         Appointment appointment = appointmentMapper.toEntity(dto);
 
         Doctor doctor = doctorService.getDoctorById(dto.getDoctorId());
@@ -91,11 +90,10 @@ public class AppointmentController {
         return appointmentMapper.toDto(savedAppointment);
     }
 
-    // Той самий принцип для зміни дати/часу й статусу: лише адмін або лікар,
-    // якому належить цей конкретний запис.
+    // адмін і лікар можуть змінювати час, дату і статус запису
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or (hasRole('DOCTOR') and @appointmentSecurity.isOwnDoctor(#id, authentication))")
-    public AppointmentResponseDTO updateAppointment(@PathVariable UUID id, @RequestBody AppointmentCreateDTO dto) {
+    public AppointmentResponseDTO updateAppointment(@PathVariable UUID id, @Valid @RequestBody AppointmentCreateDTO dto) {
         Appointment updatedData = appointmentMapper.toEntity(dto);
         Appointment savedAppointment = appointmentService.updateAppointment(id, updatedData);
         return appointmentMapper.toDto(savedAppointment);

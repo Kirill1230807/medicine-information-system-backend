@@ -1,7 +1,5 @@
 package com.bank.medicineinformationsystembackend.service;
 
-import com.bank.medicineinformationsystembackend.entity.Doctor;
-import com.bank.medicineinformationsystembackend.entity.Patient;
 import com.bank.medicineinformationsystembackend.entity.User;
 import com.bank.medicineinformationsystembackend.repository.AppointmentRepository;
 import com.bank.medicineinformationsystembackend.repository.DoctorRepository;
@@ -59,13 +57,8 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    /**
-     * Видаляє користувача разом з усіма пов'язаними даними:
-     * - лікар: усі його записи на прийом (до нього більше ніхто не записаний) і сам профіль лікаря;
-     * - пацієнт: усі його власні записи на прийом (він "звільняє" місця в лікарів) і профіль пацієнта.
-     * Останнім кроком видаляється акаунт у Keycloak, щоб користувач більше не міг увійти.
-     * Адміністратора видалити не можна.
-     */
+    // видаляє користувача разом з усіма пов'язаними даними
+
     @Transactional
     public void deleteUser(UUID id) {
         User user = userRepository.findById(id)
@@ -130,11 +123,6 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    /**
-     * Адмін призначає користувачу роль DOCTOR або PATIENT.
-     * Роль змінюється в Keycloak (звідти її бере Spring Security), а потім дзеркалиться в БД.
-     * Користувач побачить нову роль після повторного входу (токен/сесія видаються при логіні).
-     */
     public User assignRole(UUID id, String role) {
         if (role == null || !ASSIGNABLE_ROLES.contains(role)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Дозволені ролі: DOCTOR, PATIENT");

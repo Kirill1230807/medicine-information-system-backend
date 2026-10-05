@@ -38,7 +38,7 @@ public class DoctorService {
         if (doctor.getUser() != null && doctor.getUser().getId() != null) {
             boolean exists = doctorRepository.findByUserId(doctor.getUser().getId()).isPresent();
             if (exists) {
-                throw new RuntimeException("Профіль лікаря для цього користувача вже існує");
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Профіль лікаря для цього користувача вже існує");
             }
         }
 
