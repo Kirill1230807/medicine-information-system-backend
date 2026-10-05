@@ -1,7 +1,6 @@
 name: ci.yml
 on:
   push:
-    # Налаштування запуску при push у головну гілку (або master/main) та Pull Request
     branches: [ "main", "master" ]
   pull_request:
     branches: [ "main", "master" ]
@@ -23,13 +22,11 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '25'
-          cache: 'maven' # Кешування залежностей Maven
+          cache: 'maven'
 
       - name: Grant execute permission for Maven wrapper
         run: chmod +x mvnw
 
-      # Крок 3: Статичний аналіз коду (Checkstyle)
-      # Виклик плагіна напряму гарантує блокування, якщо є помилки
       - name: Run Static Code Analysis (Checkstyle)
         run: ./mvnw checkstyle:check
 
@@ -55,13 +52,12 @@ jobs:
         with:
           context: .
           file: ./Dockerfile
-          push: false # Вимога: лише локальна збірка в межах раннера
+          push: false
           tags: medicine-backend:local-test
 
   push-to-registry:
     needs: docker-build
     runs-on: ubuntu-latest
-    # Виконувати лише для push у головну гілку (не для PR)
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
     permissions:
       contents: read
