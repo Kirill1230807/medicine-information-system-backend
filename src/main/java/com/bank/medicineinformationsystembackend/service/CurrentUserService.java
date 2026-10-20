@@ -16,10 +16,6 @@ public class CurrentUserService {
         this.userRepository = userRepository;
     }
 
-    /**
-     * Знаходить у БД користувача, що відповідає поточному токену/сесії (за "sub" з Keycloak).
-     * Зазвичай рядок уже існує, бо створюється при вході через GET /api/users/me.
-     */
     public User require(Authentication authentication) {
         String externalId = authentication.getName();
         return userRepository.findByExternalId(externalId)

@@ -5,6 +5,7 @@ import jakarta.validation.Constraint;
 
 import java.lang.annotation.*;
 
+// Bean Validation Constraint
 @Documented
 @Constraint(validatedBy = { AppointmentTimeValidator.class })
 @Target({ElementType.FIELD, ElementType.PARAMETER})
