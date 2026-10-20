@@ -52,6 +52,14 @@ public class PatientController {
         return patientMapper.toDto(patient);
     }
 
+    /**
+     * і@GetMapping("/me") public PatientResponseDTO getMyPatientProfile(Authentication authentication) {
+     * User user = currentUserService.require(authentication);
+     * Patient patient = patientService.getPatientByUserId(user.getId());
+     * return patientMapper.toDto(patient);
+     * }
+     */
+
     // Персонал бачить будь-якого пацієнта; пацієнт - лише самого себе.
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN','DOCTOR') or @patientSecurity.isSelf(#id, authentication)")
@@ -59,6 +67,8 @@ public class PatientController {
         Patient patient = patientService.getPatientById(id);
         return patientMapper.toDto(patient);
     }
+
+
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -88,5 +98,14 @@ public class PatientController {
     @PreAuthorize("hasRole('ADMIN')")
     public void deletePatient(@PathVariable UUID id) {
         patientService.deletePatient(id);
+    }
+
+    // ТИМЧАСОВИЙ ЕНДПОІНТ ДЛЯ ДЕМОНСТРАЦІЇ ПРОБЛЕМИ САМОВИКЛИКУ (SELF-INVOCATION)
+    @GetMapping("/{id}/internal-test")
+    @PreAuthorize("hasAnyRole('ADMIN','DOCTOR') or @patientSecurity.isSelf(#id, authentication)")
+    public PatientResponseDTO getPatientByIdInternalTest(@PathVariable UUID id) {
+        // Викликаємо метод, який здійснює виклик через this.getPatientById(id)
+        Patient patient = patientService.getPatientByIdInternal(id);
+        return patientMapper.toDto(patient);
     }
 }

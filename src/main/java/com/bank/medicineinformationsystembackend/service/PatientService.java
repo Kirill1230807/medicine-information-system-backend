@@ -1,5 +1,8 @@
 package com.bank.medicineinformationsystembackend.service;
 
+import com.bank.medicineinformationsystembackend.aspect.annotation.AuditMedicalAction;
+import com.bank.medicineinformationsystembackend.aspect.annotation.MaskSensitiveData;
+import com.bank.medicineinformationsystembackend.aspect.annotation.RetryOnOptimisticLock;
 import com.bank.medicineinformationsystembackend.entity.Patient;
 import com.bank.medicineinformationsystembackend.repository.PatientRepository;
 import org.springframework.http.HttpStatus;
@@ -18,18 +21,26 @@ public class PatientService {
         this.patientRepository = patientRepository;
     }
 
+    @MaskSensitiveData
     @Transactional(readOnly = true)
     public List<Patient> getAllPatients() {
         return patientRepository.findAll();
     }
 
+    @MaskSensitiveData
     @Transactional(readOnly = true)
     public Patient getPatientById(UUID id) {
         return patientRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Пацієнта з ID " + id + " не знайдено"));
     }
 
+    @Transactional(readOnly = true)
+    public Patient getPatientByIdInternal(UUID id) {
+        return this.getPatientById(id); // або просто getPatientById(id)
+    }
+
     //ім'я та прізвище пацієнта не вводяться вручну: вони копіюються з акаунта на момент створення профілю.
+    @AuditMedicalAction
     @Transactional
     public Patient createPatient(Patient patient) {
         if (patient.getUser() != null && patient.getUser().getId() != null) {
@@ -51,6 +62,7 @@ public class PatientService {
         return patientRepository.save(patient);
     }
 
+    @RetryOnOptimisticLock
     @Transactional
     public Patient updatePatient(UUID id, Patient updatedData) {
         Patient existingPatient = getPatientById(id);
