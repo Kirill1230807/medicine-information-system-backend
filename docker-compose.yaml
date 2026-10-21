@@ -12,6 +12,7 @@ services:
       - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql
+      - ./docker/init-databases.sql:/docker-entrypoint-initdb.d/init-databases.sql:ro
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres -d medical_db" ]
       interval: 5s
@@ -29,6 +30,73 @@ services:
     command: start-dev --import-realm
     volumes:
       - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE: gateway
+    container_name: medical_gateway
+    restart: on-failure
+    ports:
+      - "8080:8080" # Порт для Gateway (припускаємо 8080)
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/gateway_db
+      - SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_ISSUER_URI=http://keycloak:8080/realms/medical-realm
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://keycloak:8080/realms/medical-realm
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+      user-service:
+        condition: service_started
+
+  user-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE: user-service
+    container_name: medical_user_service
+    ports:
+      - "8082:8082"
+    environment:
+      - DB_URL=jdbc:postgresql://postgres:5432/users_db
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
+      # Перевизначаємо URL Keycloak для внутрішньої мережі Docker
+      - KEYCLOAK_ISSUER_URI=http://keycloak:8080/realms/medical-realm
+      - KEYCLOAK_ADMIN_SERVER_URL=http://keycloak:8080
+      - APPOINTMENT_SERVICE_URL=http://appointment-service:8083
+    restart: on-failure
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+
+  appointment-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MODULE: appointment-service
+    container_name: medical_appointment_service
+    restart: on-failure
+    ports:
+      - "8083:8083" # Порт згідно з вашими properties
+    environment:
+      - DB_URL=jdbc:postgresql://postgres:5432/appointments_db
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
+      - KEYCLOAK_ISSUER_URI=http://keycloak:8080/realms/medical-realm
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
 
 volumes:
   postgres_data:
