@@ -31,3 +31,14 @@ keycloak:
 services:
   appointment:
     url: ${APPOINTMENT_SERVICE_URL:http://localhost:8083}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
