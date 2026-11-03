@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    app: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: {{ .Release.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.service.targetPort }}
+          env:
+            - name: APP_VERSION
+              value: {{ .Values.env.APP_VERSION | quote }}
+            - name: SPRING_DATASOURCE_URL
+              value: {{ .Values.env.DB_URL | quote }}
+            - name: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI
+              value: {{ .Values.env.KEYCLOAK_ISSUER_URI | quote }}
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.existingSecret }}
+                  key: DB_USERNAME
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.existingSecret }}
+                  key: DB_PASSWORD
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: {{ .Values.service.targetPort }}
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: {{ .Values.service.targetPort }}
+            initialDelaySeconds: 30
+            periodSeconds: 15

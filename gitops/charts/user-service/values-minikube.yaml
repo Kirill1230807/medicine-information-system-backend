@@ -1,0 +1,19 @@
+replicaCount: 2
+
+image:
+  repository: kirill1230507/medical-user-service
+  tag: "1.0.0"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8082
+  targetPort: 8082
+
+existingSecret: medical-secret
+
+env:
+  DB_URL: "jdbc:postgresql://postgres-service:5432/users_db"
+  KEYCLOAK_ISSUER_URI: "http://medical-keycloak:8080/realms/medical-realm"
+  APPOINTMENT_SERVICE_URL: "http://appointment-service:8083"
+  APP_VERSION: "1.0.0"
