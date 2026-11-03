@@ -7,7 +7,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/Kirill1230807/medicine-information-system-backend.git
-    targetRevision: main
+    targetRevision: devops/laba_5             # <--- Змінено на вашу гілку
     path: gitops/charts/user-service
     helm:
       valueFiles:
