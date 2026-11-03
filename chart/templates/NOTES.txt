@@ -1,0 +1,11 @@
+1. Get the application URL by running these commands:
+{{- if .Values.ingress.enabled }}
+  http://{{ .Values.ingress.host }}{{ .Values.ingress.path }}
+{{- else if contains "NodePort" .Values.service.type }}
+  export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "medical-user-service.fullname" . }})
+  export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+{{- else if contains "ClusterIP" .Values.service.type }}
+  echo "Visit http://127.0.0.1:8082 to use your application"
+  kubectl --namespace {{ .Release.Namespace }} port-forward svc/{{ include "medical-user-service.fullname" . }} 8082:{{ .Values.service.port }}
+{{- end }}

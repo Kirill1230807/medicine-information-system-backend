@@ -1,0 +1,16 @@
+replicaCount: 1
+
+image:
+  repository: medical-user-service
+  tag: "dev-latest"
+
+resources:
+  limits:
+    cpu: 250m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+ingress:
+  enabled: false

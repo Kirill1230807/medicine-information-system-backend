@@ -1,0 +1,19 @@
+replicaCount: 3
+
+image:
+  repository: registry.company.com/medical-user-service
+  tag: "v1.0.0"
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    cpu: 500m
+    memory: 512Mi
+
+ingress:
+  enabled: true
+  host: api.medical.com
+  annotations:
+    kubernetes.io/ingress.class: nginx
