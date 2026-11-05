@@ -7,7 +7,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/Kirill1230807/medicine-information-system-backend.git
-    targetRevision: devops/laba_5             # <--- Змінено на вашу гілку
+    targetRevision: devops/laba_5
     path: gitops/argocd-apps
   destination:
     server: https://kubernetes.default.svc
