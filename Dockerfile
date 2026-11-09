@@ -1,20 +1,11 @@
 FROM eclipse-temurin:25-jdk AS builder
+ARG MODULE
 WORKDIR /app
-
-COPY mvnw pom.xml ./
-COPY .mvn .mvn
-
-RUN chmod +x mvnw
-
-COPY src src
-
-RUN ./mvnw clean package -DskipTests
+COPY . .
+RUN chmod +x mvnw && ./mvnw -pl ${MODULE} -am clean package -DskipTests
 
 FROM eclipse-temurin:25-jre
+ARG MODULE
 WORKDIR /app
-
-COPY --from=builder /app/target/*.jar app.jar
-
-EXPOSE 8080
-
+COPY --from=builder /app/${MODULE}/target/*.jar app.jar
 ENTRYPOINT ["java", "-jar", "app.jar"]

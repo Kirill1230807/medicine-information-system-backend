@@ -50,6 +50,7 @@ jobs:
       - name: Build Docker Image Locally
         uses: docker/build-push-action@v5
         with:
+          build-args: MODULE=user-service
           context: .
           file: ./Dockerfile
           push: false
