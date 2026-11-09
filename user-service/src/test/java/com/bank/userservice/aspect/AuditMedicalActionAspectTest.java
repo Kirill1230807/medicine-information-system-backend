@@ -1,4 +1,4 @@
-package com.bank.medicineinformationsystembackend.aspect;
+package com.bank.userservice.aspect;
 
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.Signature;

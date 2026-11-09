@@ -40,11 +40,11 @@ public class AppointmentController {
     }
 
     // Для статистики в user-service
-    @GetMapping("/count")
-    @PreAuthorize("hasRole('ADMIN')")
-    public long count() {
-        return appointmentService.count();
-    }
+//    @GetMapping("/count")
+//    @PreAuthorize("hasRole('ADMIN')")
+//    public long count() {
+//        return appointmentService.count();
+//    }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') " +
@@ -102,17 +102,17 @@ public class AppointmentController {
     }
 
     // Їх викликає user-service при видаленні лікаря / пацієнта / користувача
-    @DeleteMapping("/doctor/{doctorId}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    @PreAuthorize("hasRole('ADMIN')")
-    public void deleteByDoctor(@PathVariable UUID doctorId) {
-        appointmentService.deleteByDoctor(doctorId);
-    }
-
-    @DeleteMapping("/patient/{patientId}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    @PreAuthorize("hasRole('ADMIN')")
-    public void deleteByPatient(@PathVariable UUID patientId) {
-        appointmentService.deleteByPatient(patientId);
-    }
+//    @DeleteMapping("/doctor/{doctorId}")
+//    @ResponseStatus(HttpStatus.NO_CONTENT)
+//    @PreAuthorize("hasRole('ADMIN')")
+//    public void deleteByDoctor(@PathVariable UUID doctorId) {
+//        appointmentService.deleteByDoctor(doctorId);
+//    }
+//
+//    @DeleteMapping("/patient/{patientId}")
+//    @ResponseStatus(HttpStatus.NO_CONTENT)
+//    @PreAuthorize("hasRole('ADMIN')")
+//    public void deleteByPatient(@PathVariable UUID patientId) {
+//        appointmentService.deleteByPatient(patientId);
+//    }
 }

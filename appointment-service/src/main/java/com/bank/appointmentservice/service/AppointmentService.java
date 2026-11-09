@@ -2,6 +2,7 @@ package com.bank.appointmentservice.service;
 
 import com.bank.appointmentservice.entity.*;
 import com.bank.appointmentservice.repository.AppointmentRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -11,7 +12,10 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
+@Slf4j
 @Service
 public class AppointmentService {
 
@@ -19,8 +23,11 @@ public class AppointmentService {
 
     private final AppointmentRepository appointmentRepository;
 
-    public AppointmentService(AppointmentRepository appointmentRepository) {
+    private final MedicalSideEffectService sideEffectService;
+
+    public AppointmentService(AppointmentRepository appointmentRepository, MedicalSideEffectService sideEffectService) {
         this.appointmentRepository = appointmentRepository;
+        this.sideEffectService = sideEffectService;
     }
 
     @Transactional(readOnly = true)
@@ -46,7 +53,27 @@ public class AppointmentService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Неможливо створити запис на минулий час");
         }
 
-        return appointmentRepository.save(appointment);
+        Appointment savedAppointment = appointmentRepository.save(appointment);
+
+        String userEmail = "patient@example.com";
+
+        sideEffectService.sendEmailNotification(userEmail);
+
+        CompletableFuture<String> pdfFuture = sideEffectService.generatePdfReport();
+        CompletableFuture<String> extSystemFuture = sideEffectService.notifyExternalSystem();
+
+        String asyncDetails = pdfFuture.thenCombine(extSystemFuture, (pdfResult, extResult) ->
+                        String.format("Документ: %s, Інтеграція: %s", pdfResult, extResult))
+                .orTimeout(2, TimeUnit.SECONDS)
+                .exceptionally(ex -> {
+                    log.error("Помилка фонових завдань під час створення запису: {}", ex.getMessage());
+                    return "Додаткова інформація тимчасово недоступна";
+                })
+                .join();
+
+        log.info("Запис створено. Деталі фонових завдань: {}", asyncDetails);
+
+        return savedAppointment;
     }
 
     @Transactional
@@ -93,20 +120,5 @@ public class AppointmentService {
     @Transactional(readOnly = true)
     public List<Appointment> getDoctorAppointmentsByStatus(UUID doctorId, String status) {
         return appointmentRepository.findByDoctorIdAndStatus(doctorId, status);
-    }
-
-    @Transactional(readOnly = true)
-    public long count() {
-        return appointmentRepository.count();
-    }
-
-    @Transactional
-    public void deleteByDoctor(UUID doctorId) {
-        appointmentRepository.deleteByDoctorId(doctorId);
-    }
-
-    @Transactional
-    public void deleteByPatient(UUID patientId) {
-        appointmentRepository.deleteByPatientId(patientId);
     }
 }

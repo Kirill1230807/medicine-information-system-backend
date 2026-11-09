@@ -1,6 +1,6 @@
-package com.bank.medicineinformationsystembackend.aspect;
+package com.bank.userservice.aspect;
 
-import com.bank.medicineinformationsystembackend.entity.Patient;
+import com.bank.userservice.entity.Patient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

@@ -9,19 +9,19 @@ spring:
       client:
         registration:
           keycloak:
-            client-id: medical-client
-            client-secret: medical-client-dev-secret
-            scope:
-             - openid
-             - profile
-             - email
+            client-id: ${KEYCLOAK_CLIENT_ID:medical-backend}
+            client-secret: ${KEYCLOAK_CLIENT_SECRET:medical-backend-dev-secret}
             authorization-grant-type: authorization_code
+            scope:
+              - openid
+              - profile
+              - email
         provider:
           keycloak:
-            issuer-uri: http://localhost:8081/realms/medical-realm
+            issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8081/realms/medical-realm}
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:8081/realms/medical-realm
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8081/realms/medical-realm}
   cloud:
     gateway:
       server:
@@ -30,12 +30,8 @@ spring:
             - id: user-service
               uri: ${USER_SERVICE_URL:http://localhost:8082}
               predicates:
-                - Path=/api/users/**,/api/doctors/**,/api/patients/**,/api/admin/**
-              filters:
-                - TokenRelay=
+                - Path=/api/users/**, /api/doctors/**, /api/patients/**, /api/admin/**
             - id: appointment-service
               uri: ${APPOINTMENT_SERVICE_URL:http://localhost:8083}
               predicates:
                 - Path=/api/appointments/**
-              filters:
-                - TokenRelay=
