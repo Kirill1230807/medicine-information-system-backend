@@ -5,7 +5,7 @@ spring:
   application:
     name: appointment-service
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5433/appointments_db}
+    url: ${DB_URL:jdbc:postgresql://localhost:5433/appointments_db?options=-c%20timezone=UTC}
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:postgres}
   jpa:
@@ -24,6 +24,18 @@ spring:
     job-store-type: jdbc
     jdbc:
       initialize-schema: never
+    properties:
+      org:
+        quartz:
+          scheduler:
+            instanceName: AppointmentScheduler
+            instanceId: AUTO
+          jobStore:
+            class: org.springframework.scheduling.quartz.LocalDataSourceJobStore
+            driverDelegateClass: org.quartz.impl.jdbcjobstore.PostgreSQLDelegate
+            tablePrefix: QRTZ_
+            isClustered: false
+            useProperties: true
 
 services:
   user:

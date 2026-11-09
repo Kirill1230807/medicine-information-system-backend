@@ -5,7 +5,7 @@ spring:
   application:
     name: user-service
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5433/users_db}
+    url: ${DB_URL:jdbc:postgresql://localhost:5433/users_db?options=-c%20timezone=UTC}
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:postgres}
   jpa:
