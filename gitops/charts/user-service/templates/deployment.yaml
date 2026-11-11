@@ -1,3 +1,4 @@
+{{- if not .Values.rollout.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -49,3 +50,4 @@ spec:
               port: {{ .Values.service.targetPort }}
             initialDelaySeconds: 30
             periodSeconds: 15
+{{- end }}
