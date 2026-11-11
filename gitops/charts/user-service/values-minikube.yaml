@@ -1,4 +1,4 @@
-replicaCount: 2
+replicaCount: 5
 
 image:
   repository: kirill1230507/medical-user-service
@@ -11,6 +11,18 @@ service:
   targetPort: 8082
 
 existingSecret: medical-secret
+
+rollout:
+  enabled: true
+  strategy:
+    canary:
+      steps:
+        - setWeight: 20
+        - pause: {}
+        - setWeight: 60
+        - pause: { duration: 30s }
+        - setWeight: 80
+        - pause: { duration: 30s }
 
 env:
   DB_URL: "jdbc:postgresql://host.minikube.internal:5433/users_db"
