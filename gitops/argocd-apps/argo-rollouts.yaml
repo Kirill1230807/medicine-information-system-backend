@@ -6,6 +6,11 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "-1"
 spec:
+  ignoreDifferences:
+    - group: argoproj.io
+      kind: Rollout
+      jsonPointers:
+        - /status
   project: default
   source:
     repoURL: https://argoproj.github.io/argo-helm
