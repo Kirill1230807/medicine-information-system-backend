@@ -37,14 +37,16 @@ spec:
               port: { { .Values.service.targetPort } }
             initialDelaySeconds: 100
             periodSeconds: 10
-            failureThreshold: 5
+            failureThreshold: 6
+            timeoutSeconds: 5
             readinessProbe:
               httpGet:
                 path: /actuator/health/readiness
                 port: { { .Values.service.targetPort } }
               initialDelaySeconds: 100
               periodSeconds: 5
-              failureThreshold: 5
+              failureThreshold: 6
+              timeoutSeconds: 5
   strategy:
     {{- toYaml .Values.rollout.strategy | nindent 4 }}
 {{- end }}
