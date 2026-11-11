@@ -26,9 +26,25 @@ spec:
               protocol: TCP
           envFrom:
             - configMapRef:
-                name: medical-config
+                name: {{ include "medical-user-service.fullname" . }}-config
             - secretRef:
-                name: medical-secret
+            name: {{ include "medical-user-service.fullname" . }}-secret
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: { { .Values.service.targetPort } }
+            initialDelaySeconds: 100
+            periodSeconds: 10
+            failureThreshold: 5
+            readinessProbe:
+              httpGet:
+                path: /actuator/health/readiness
+                port: { { .Values.service.targetPort } }
+              initialDelaySeconds: 100
+              periodSeconds: 5
+              failureThreshold: 5
   strategy:
     {{- toYaml .Values.rollout.strategy | nindent 4 }}
 {{- end }}
