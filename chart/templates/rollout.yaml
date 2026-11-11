@@ -28,7 +28,7 @@ spec:
             - configMapRef:
                 name: {{ include "medical-user-service.fullname" . }}-config
             - secretRef:
-            name: {{ include "medical-user-service.fullname" . }}-secret
+            - name: {{ include "medical-user-service.fullname" . }}-secret
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           livenessProbe:
