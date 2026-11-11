@@ -43,14 +43,18 @@ spec:
             httpGet:
               path: /actuator/health/readiness
               port: {{ .Values.service.targetPort }}
-            initialDelaySeconds: 90
+            initialDelaySeconds: 100
             periodSeconds: 10
+            failureThreshold: 6
+            timeoutSeconds: 5
           livenessProbe:
             httpGet:
               path: /actuator/health/liveness
               port: {{ .Values.service.targetPort }}
-            initialDelaySeconds: 90
-            periodSeconds: 15
+            initialDelaySeconds: 100
+            periodSeconds: 10
+            failureThreshold: 6
+            timeoutSeconds: 5
   strategy:
     {{- toYaml .Values.rollout.strategy | nindent 4 }}
 {{- end }}
