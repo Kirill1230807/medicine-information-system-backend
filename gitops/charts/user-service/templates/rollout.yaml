@@ -42,20 +42,20 @@ spec:
           startupProbe:
             httpGet:
               path: /actuator/health/liveness
-              port: { { .Values.service.targetPort } }
+              port: {{ .Values.service.targetPort }}
             initialDelaySeconds: 100
             periodSeconds: 10
             failureThreshold: 12
             readinessProbe:
               httpGet:
                 path: /actuator/health/readiness
-                port: { { .Values.service.targetPort } }
+                port: {{ .Values.service.targetPort }}
               periodSeconds: 5
               failureThreshold: 3
             livenessProbe:
               httpGet:
                 path: /actuator/health/liveness
-                port: { { .Values.service.targetPort } }
+                port: {{ .Values.service.targetPort }}
               periodSeconds: 10
               failureThreshold: 3
   strategy:
