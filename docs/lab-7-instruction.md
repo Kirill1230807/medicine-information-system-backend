@@ -116,11 +116,3 @@ git push origin devops/laba_5
 ```powershell
 kubectl argo rollouts history user-service -n medical-system
 ```
-
-### Короткі відповіді на типові запитання під час захисту:
-1. **Чому замість `Deployment` використовується `Rollout`?**  
-   Стандартний `Deployment` підтримує лише стратегії `RollingUpdate` та `Recreate`, які не дозволяють гнучко керувати відсотком трафіку або ставити розгортання на ручну паузу для перевірки метрик. Контролер Argo Rollouts додає CRD `Rollout` для реалізації Canary та Blue-Green деплойментів.
-2. **Навіщо потрібна `startupProbe` у нашому шаблоні?**  
-   Мікросервіс на Spring Boot при одночасному старті 5 реплік у середовищі Minikube завантажується близько 60–90 секунд. `startupProbe` блокує перевірки `livenessProbe` на час ініціалізації JVM (до 180 секунд), запобігаючи циклічним перезапускам (`CrashLoopBackOff`).
-3. **Чому після `kubectl argo rollouts abort` обов'язково потрібно робити `git revert`?**  
-   Argo CD постійно звіряє стан кластера з Git-репозиторієм. Команда `abort` змінює стан лише в кластері, тому без `git revert` додаток залишатиметься в статусі `Degraded` через розбіжність із бажаним станом, описаним у Git.
