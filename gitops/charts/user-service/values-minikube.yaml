@@ -28,4 +28,4 @@ env:
   DB_URL: "jdbc:postgresql://host.minikube.internal:5433/users_db"
   KEYCLOAK_ISSUER_URI: "http://host.minikube.internal:8081/realms/medical-realm"
   APPOINTMENT_SERVICE_URL: "http://host.minikube.internal:8083"
-  APP_VERSION: "1.2.0"
+  APP_VERSION: "1.1.0"
