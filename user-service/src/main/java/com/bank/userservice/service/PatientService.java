@@ -5,7 +5,9 @@ import com.bank.userservice.aspect.annotation.MaskSensitiveData;
 import com.bank.userservice.aspect.annotation.RetryOnOptimisticLock;
 import com.bank.userservice.client.AppointmentServiceClient;
 import com.bank.userservice.entity.Patient;
+import com.bank.userservice.event.MedicalDomainEvent;
 import com.bank.userservice.repository.PatientRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,10 +20,13 @@ import java.util.UUID;
 public class PatientService {
     private final PatientRepository patientRepository;
     private final AppointmentServiceClient appointmentServiceClient;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public PatientService(PatientRepository patientRepository, AppointmentServiceClient appointmentServiceClient) {
+
+    public PatientService(PatientRepository patientRepository, AppointmentServiceClient appointmentServiceClient, ApplicationEventPublisher eventPublisher) {
         this.patientRepository = patientRepository;
         this.appointmentServiceClient = appointmentServiceClient;
+        this.eventPublisher = eventPublisher;
     }
 
     @MaskSensitiveData
@@ -81,8 +86,12 @@ public class PatientService {
         if (!patientRepository.existsById(id)) {
             throw new RuntimeException("Пацієнта з ID " + id + " не знайдено");
         }
-        appointmentServiceClient.deleteByPatient(id);
+        // ВИДАЛЕНО: appointmentServiceClient.deleteByPatient(id);
         patientRepository.deleteById(id);
+
+        eventPublisher.publishEvent(
+                MedicalDomainEvent.of("PATIENT_DELETED", id, null)
+        );
     }
 
     @Transactional(readOnly = true)

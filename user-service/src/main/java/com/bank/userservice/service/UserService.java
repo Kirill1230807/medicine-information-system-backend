@@ -2,7 +2,9 @@ package com.bank.userservice.service;
 
 import com.bank.userservice.client.AppointmentServiceClient;
 import com.bank.userservice.entity.*;
+import com.bank.userservice.event.MedicalDomainEvent;
 import com.bank.userservice.repository.*;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,17 +25,20 @@ public class UserService {
     private final PatientRepository patientRepository;
     private final AppointmentServiceClient appointmentServiceClient;
     private final KeycloakAdminService keycloakAdminService;
+    private final ApplicationEventPublisher eventPublisher;
+
 
     public UserService(UserRepository userRepository,
                        DoctorRepository doctorRepository,
                        PatientRepository patientRepository,
                        AppointmentServiceClient appointmentServiceClient,
-                       KeycloakAdminService keycloakAdminService) {
+                       KeycloakAdminService keycloakAdminService, ApplicationEventPublisher eventPublisher) {
         this.userRepository = userRepository;
         this.doctorRepository = doctorRepository;
         this.patientRepository = patientRepository;
         this.appointmentServiceClient = appointmentServiceClient;
         this.keycloakAdminService = keycloakAdminService;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional(readOnly = true)
@@ -68,13 +73,13 @@ public class UserService {
 
         if ("ROLE_DOCTOR".equals(user.getRole())) {
             doctorRepository.findByUserId(id).ifPresent(doctor -> {
-                appointmentServiceClient.deleteByDoctor(doctor.getId());
                 doctorRepository.delete(doctor);
+                eventPublisher.publishEvent(MedicalDomainEvent.of("DOCTOR_DELETED", doctor.getId(), null));
             });
         } else if ("ROLE_PATIENT".equals(user.getRole())) {
             patientRepository.findByUserId(id).ifPresent(patient -> {
-                appointmentServiceClient.deleteByPatient(patient.getId());
                 patientRepository.delete(patient);
+                eventPublisher.publishEvent(MedicalDomainEvent.of("PATIENT_DELETED", patient.getId(), null));
             });
         }
 

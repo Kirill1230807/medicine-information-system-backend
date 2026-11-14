@@ -2,7 +2,9 @@ package com.bank.userservice.service;
 
 import com.bank.userservice.client.AppointmentServiceClient;
 import com.bank.userservice.entity.Doctor;
+import com.bank.userservice.event.MedicalDomainEvent;
 import com.bank.userservice.repository.DoctorRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,10 +17,12 @@ import java.util.UUID;
 public class DoctorService {
     private final DoctorRepository doctorRepository;
     private final AppointmentServiceClient appointmentServiceClient;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public DoctorService(DoctorRepository doctorRepository, AppointmentServiceClient appointmentServiceClient) {
+    public DoctorService(DoctorRepository doctorRepository, AppointmentServiceClient appointmentServiceClient, ApplicationEventPublisher eventPublisher) {
         this.doctorRepository = doctorRepository;
         this.appointmentServiceClient = appointmentServiceClient;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional(readOnly = true)
@@ -60,12 +64,14 @@ public class DoctorService {
     @Transactional
     public Doctor updateDoctor(UUID id, Doctor updatedData) {
         Doctor existingDoctor = getDoctorById(id);
-
-        // Ім'я та прізвище лишаються прив'язаними до акаунта і тут не змінюються
         existingDoctor.setSpecialization(updatedData.getSpecialization());
         existingDoctor.setCabinetNumber(updatedData.getCabinetNumber());
+        Doctor saved = doctorRepository.save(existingDoctor);
 
-        return doctorRepository.save(existingDoctor);
+        eventPublisher.publishEvent(
+                MedicalDomainEvent.of("DOCTOR_CABINET_UPDATED", saved.getId(), saved.getCabinetNumber())
+        );
+        return saved;
     }
 
     @Transactional
@@ -73,8 +79,12 @@ public class DoctorService {
         if (!doctorRepository.existsById(id)) {
             throw new RuntimeException("Лікаря з ID " + id + " не знайдено");
         }
-        appointmentServiceClient.deleteByDoctor(id);
+        // ВИДАЛЕНО: appointmentServiceClient.deleteByDoctor(id);
         doctorRepository.deleteById(id);
+
+        eventPublisher.publishEvent(
+                MedicalDomainEvent.of("DOCTOR_DELETED", id, null)
+        );
     }
 
     @Transactional(readOnly = true)

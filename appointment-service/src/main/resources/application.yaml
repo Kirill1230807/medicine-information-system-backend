@@ -37,6 +37,12 @@ spring:
             isClustered: false
             useProperties: true
 
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASS:guest}
+
 services:
   user:
     url: ${USER_SERVICE_URL:http://localhost:8082}

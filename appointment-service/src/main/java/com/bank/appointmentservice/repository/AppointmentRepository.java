@@ -33,4 +33,16 @@ public interface AppointmentRepository extends JpaRepository<Appointment,UUID> {
     int markOutdatedAppointments(
             @Param("threshold") ZonedDateTime threshold,
             @Param("newStatus") String newStatus);
+
+    List<Appointment> findAllByDoctorId(UUID doctorId);
+
+    List<Appointment> findAllByPatientId(UUID patientId);
+
+    @Modifying
+    @Query("DELETE FROM Appointment a WHERE a.doctorId = :doctorId")
+    void deleteAllByDoctorId(@Param("doctorId") UUID doctorId);
+
+    @Modifying
+    @Query("DELETE FROM Appointment a WHERE a.patientId = :patientId")
+    void deleteAllByPatientId(@Param("patientId") UUID patientId);
 }

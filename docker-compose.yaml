@@ -31,6 +31,21 @@ services:
     volumes:
       - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
 
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: medical_rabbitmq
+    ports:
+      - "5672:5672"   # AMQP протокол
+      - "15672:15672" # Web UI (guest / guest)
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   gateway:
     build:
       context: .
@@ -66,16 +81,19 @@ services:
       - DB_URL=jdbc:postgresql://postgres:5432/users_db
       - DB_USERNAME=postgres
       - DB_PASSWORD=postgres
-      # Перевизначаємо URL Keycloak для внутрішньої мережі Docker
       - KEYCLOAK_ISSUER_URI=http://keycloak:8080/realms/medical-realm
       - KEYCLOAK_ADMIN_SERVER_URL=http://keycloak:8080
       - APPOINTMENT_SERVICE_URL=http://appointment-service:8083
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
     restart: on-failure
     depends_on:
       postgres:
         condition: service_healthy
       keycloak:
         condition: service_started
+      rabbitmq:
+        condition: service_healthy
 
   appointment-service:
     build:
@@ -92,11 +110,15 @@ services:
       - DB_USERNAME=postgres
       - DB_PASSWORD=postgres
       - KEYCLOAK_ISSUER_URI=http://keycloak:8080/realms/medical-realm
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
     depends_on:
       postgres:
         condition: service_healthy
       keycloak:
         condition: service_started
+      rabbitmq:
+        condition: service_healthy
 
 volumes:
   postgres_data:

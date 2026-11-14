@@ -121,4 +121,38 @@ public class AppointmentService {
     public List<Appointment> getDoctorAppointmentsByStatus(UUID doctorId, String status) {
         return appointmentRepository.findByDoctorIdAndStatus(doctorId, status);
     }
+
+    @Transactional
+    public void deleteByDoctorId(UUID doctorId) {
+        log.info("Deleting all appointments for deleted doctor: doctorId={}", doctorId);
+        appointmentRepository.deleteAllByDoctorId(doctorId);
+    }
+
+    @Transactional
+    public void deleteByPatientId(UUID patientId) {
+        log.info("Deleting all appointments for deleted patient: patientId={}", patientId);
+        appointmentRepository.deleteAllByPatientId(patientId);
+    }
+
+    @Transactional
+    public void updateDoctorCabinet(UUID doctorId, String newCabinet) {
+        log.info("Updating cabinet to '{}' for appointments of doctor: doctorId={}", newCabinet, doctorId);
+        List<Appointment> appointments = appointmentRepository.findAllByDoctorId(doctorId);
+
+        for (Appointment appointment : appointments) {
+            if (!"CANCELLED".equalsIgnoreCase(String.valueOf(appointment.getStatus()))
+                    && !"COMPLETED".equalsIgnoreCase(String.valueOf(appointment.getStatus()))) {
+
+                String notePrefix = "Новий кабінет лікаря: " + newCabinet;
+                String currentNotes = appointment.getNotes();
+                if (currentNotes == null || currentNotes.isBlank()) {
+                    appointment.setNotes(notePrefix);
+                } else if (!currentNotes.contains(notePrefix)) {
+                    appointment.setNotes(currentNotes + " | " + notePrefix);
+                }
+            }
+        }
+
+        appointmentRepository.saveAll(appointments);
+    }
 }
