@@ -1,6 +1,5 @@
 package com.bank.userservice.service;
 
-import com.bank.userservice.client.AppointmentServiceClient;
 import com.bank.userservice.entity.*;
 import com.bank.userservice.repository.DoctorRepository;
 import com.bank.userservice.repository.PatientRepository;
@@ -33,8 +32,6 @@ class UserServiceTest {
     @Mock
     private PatientRepository patientRepository;
 
-    @Mock
-    private AppointmentServiceClient appointmentServiceClient;
 
     @Mock
     private KeycloakAdminService keycloakAdminService;
@@ -164,7 +161,6 @@ class UserServiceTest {
 
         when(userRepository.findById(userId)).thenReturn(Optional.of(doctorUser));
         when(doctorRepository.findByUserId(userId)).thenReturn(Optional.of(doctor));
-        doNothing().when(appointmentServiceClient).deleteByDoctor(doctorId);
         doNothing().when(doctorRepository).delete(doctor);
         doNothing().when(keycloakAdminService).deleteUser("ext-doctor-123");
         doNothing().when(userRepository).delete(doctorUser);
@@ -175,7 +171,6 @@ class UserServiceTest {
         // Assert
         verify(userRepository, times(1)).findById(userId);
         verify(doctorRepository, times(1)).findByUserId(userId);
-        verify(appointmentServiceClient, times(1)).deleteByDoctor(doctorId);
         verify(doctorRepository, times(1)).delete(doctor);
         verify(keycloakAdminService, times(1)).deleteUser("ext-doctor-123");
         verify(userRepository, times(1)).delete(doctorUser);
@@ -196,7 +191,6 @@ class UserServiceTest {
 
         when(userRepository.findById(userId)).thenReturn(Optional.of(patientUser));
         when(patientRepository.findByUserId(userId)).thenReturn(Optional.of(patient));
-        doNothing().when(appointmentServiceClient).deleteByPatient(patientId);
         doNothing().when(patientRepository).delete(patient);
         doNothing().when(keycloakAdminService).deleteUser("ext-patient-123");
         doNothing().when(userRepository).delete(patientUser);
@@ -207,7 +201,6 @@ class UserServiceTest {
         // Assert
         verify(userRepository, times(1)).findById(userId);
         verify(patientRepository, times(1)).findByUserId(userId);
-        verify(appointmentServiceClient, times(1)).deleteByPatient(patientId);
         verify(patientRepository, times(1)).delete(patient);
         verify(keycloakAdminService, times(1)).deleteUser("ext-patient-123");
         verify(userRepository, times(1)).delete(patientUser);

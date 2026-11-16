@@ -1,6 +1,5 @@
 package com.bank.userservice.service;
 
-import com.bank.userservice.client.AppointmentServiceClient;
 import com.bank.userservice.entity.Doctor;
 import com.bank.userservice.event.MedicalDomainEvent;
 import com.bank.userservice.repository.DoctorRepository;
@@ -16,12 +15,10 @@ import java.util.UUID;
 @Service
 public class DoctorService {
     private final DoctorRepository doctorRepository;
-    private final AppointmentServiceClient appointmentServiceClient;
     private final ApplicationEventPublisher eventPublisher;
 
-    public DoctorService(DoctorRepository doctorRepository, AppointmentServiceClient appointmentServiceClient, ApplicationEventPublisher eventPublisher) {
+    public DoctorService(DoctorRepository doctorRepository, ApplicationEventPublisher eventPublisher) {
         this.doctorRepository = doctorRepository;
-        this.appointmentServiceClient = appointmentServiceClient;
         this.eventPublisher = eventPublisher;
     }
 

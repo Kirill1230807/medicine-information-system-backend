@@ -1,5 +1,6 @@
 package com.bank.userservice.controller;
 
+import com.bank.userservice.client.port.PatientNextAppointmentPort;
 import com.bank.userservice.dto.patient.*;
 import com.bank.userservice.entity.Patient;
 import com.bank.userservice.entity.User;
@@ -25,13 +26,15 @@ public class PatientController {
     private final UserService userService;
     private final CurrentUserService currentUserService;
     private final PatientMapper patientMapper;
+    private final PatientNextAppointmentPort patientNextAppointmentPort;
 
     public PatientController(PatientService patientService, UserService userService,
-                             CurrentUserService currentUserService, PatientMapper patientMapper) {
+                             CurrentUserService currentUserService, PatientMapper patientMapper, PatientNextAppointmentPort patientNextAppointmentPort) {
         this.patientService = patientService;
         this.userService = userService;
         this.currentUserService = currentUserService;
         this.patientMapper = patientMapper;
+        this.patientNextAppointmentPort = patientNextAppointmentPort;
     }
 
     // Повний список пацієнтів бачать лише персонал (адмін, лікар).
@@ -44,20 +47,11 @@ public class PatientController {
                 .collect(Collectors.toList());
     }
 
-
     @GetMapping("/me")
     public PatientResponseDTO getMyPatientProfile(@AuthenticatedUser User user) {
         Patient patient = patientService.getPatientByUserId(user.getId());
         return patientMapper.toDto(patient);
     }
-
-    /**
-     * і@GetMapping("/me") public PatientResponseDTO getMyPatientProfile(Authentication authentication) {
-     * User user = currentUserService.require(authentication);
-     * Patient patient = patientService.getPatientByUserId(user.getId());
-     * return patientMapper.toDto(patient);
-     * }
-     */
 
     // Персонал бачить будь-якого пацієнта; пацієнт - лише самого себе.
     @GetMapping("/{id}")
@@ -66,8 +60,6 @@ public class PatientController {
         Patient patient = patientService.getPatientById(id);
         return patientMapper.toDto(patient);
     }
-
-
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -99,12 +91,15 @@ public class PatientController {
         patientService.deletePatient(id);
     }
 
-    // ТИМЧАСОВИЙ ЕНДПОІНТ ДЛЯ ДЕМОНСТРАЦІЇ ПРОБЛЕМИ САМОВИКЛИКУ (SELF-INVOCATION)
     @GetMapping("/{id}/internal-test")
     @PreAuthorize("hasAnyRole('ADMIN','DOCTOR') or @patientSecurity.isSelf(#id, authentication)")
     public PatientResponseDTO getPatientByIdInternalTest(@PathVariable UUID id) {
-        // Викликаємо метод, який здійснює виклик через this.getPatientById(id)
         Patient patient = patientService.getPatientByIdInternal(id);
         return patientMapper.toDto(patient);
+    }
+
+    @GetMapping("/{id}/next-appointment")
+    public PatientNextAppointmentPort.NextAppointmentInfo getPatientNextAppointment(@PathVariable UUID id) {
+        return patientNextAppointmentPort.getNextAppointment(id);
     }
 }

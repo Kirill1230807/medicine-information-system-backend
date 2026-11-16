@@ -16,6 +16,7 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>grpc-contrast</module>
         <module>gateway</module>
         <module>user-service</module>
         <module>appointment-service</module>
@@ -25,6 +26,8 @@
         <java.version>25</java.version>
         <spring-cloud.version>2025.1.2</spring-cloud.version>
         <mapstruct.version>1.7.0.Beta2</mapstruct.version>
+        <grpc.version>1.71.0</grpc.version>
+        <protobuf.version>4.30.2</protobuf.version>
     </properties>
 
     <dependencyManagement>

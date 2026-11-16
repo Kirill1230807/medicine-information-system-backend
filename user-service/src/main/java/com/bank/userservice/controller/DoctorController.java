@@ -1,5 +1,6 @@
 package com.bank.userservice.controller;
 
+import com.bank.userservice.client.port.DoctorAppointmentStatsPort;
 import com.bank.userservice.dto.doctor.*;
 import com.bank.userservice.entity.Doctor;
 import com.bank.userservice.entity.User;
@@ -14,6 +15,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -25,13 +27,15 @@ public class DoctorController {
     private final UserService userService;
     private final CurrentUserService currentUserService;
     private final DoctorMapper doctorMapper;
+    private final DoctorAppointmentStatsPort doctorAppointmentStatsPort;
 
     public DoctorController(DoctorService doctorService, UserService userService,
-                            CurrentUserService currentUserService, DoctorMapper doctorMapper) {
+                            CurrentUserService currentUserService, DoctorMapper doctorMapper, DoctorAppointmentStatsPort doctorAppointmentStatsPort) {
         this.doctorService = doctorService;
         this.userService = userService;
         this.currentUserService = currentUserService;
         this.doctorMapper = doctorMapper;
+        this.doctorAppointmentStatsPort = doctorAppointmentStatsPort;
     }
 
     @GetMapping
@@ -88,5 +92,11 @@ public class DoctorController {
     @PreAuthorize("hasRole('ADMIN')")
     public void deleteDoctor(@PathVariable UUID id) {
         doctorService.deleteDoctor(id);
+    }
+
+    // У DoctorController.java додайте ендпоінт перевірки активних записів лікаря:
+    @GetMapping("/{id}/appointments-count")
+    public Map<String, Long> getDoctorActiveAppointments(@PathVariable UUID id) {
+        return Map.of("activeAppointments", doctorAppointmentStatsPort.getActiveAppointmentsCount(id));
     }
 }

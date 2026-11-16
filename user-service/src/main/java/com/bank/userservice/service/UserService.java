@@ -1,6 +1,5 @@
 package com.bank.userservice.service;
 
-import com.bank.userservice.client.AppointmentServiceClient;
 import com.bank.userservice.entity.*;
 import com.bank.userservice.event.MedicalDomainEvent;
 import com.bank.userservice.repository.*;
@@ -23,7 +22,6 @@ public class UserService {
     private final UserRepository userRepository;
     private final DoctorRepository doctorRepository;
     private final PatientRepository patientRepository;
-    private final AppointmentServiceClient appointmentServiceClient;
     private final KeycloakAdminService keycloakAdminService;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -31,12 +29,10 @@ public class UserService {
     public UserService(UserRepository userRepository,
                        DoctorRepository doctorRepository,
                        PatientRepository patientRepository,
-                       AppointmentServiceClient appointmentServiceClient,
                        KeycloakAdminService keycloakAdminService, ApplicationEventPublisher eventPublisher) {
         this.userRepository = userRepository;
         this.doctorRepository = doctorRepository;
         this.patientRepository = patientRepository;
-        this.appointmentServiceClient = appointmentServiceClient;
         this.keycloakAdminService = keycloakAdminService;
         this.eventPublisher = eventPublisher;
     }

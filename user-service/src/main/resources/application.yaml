@@ -30,7 +30,15 @@ keycloak:
 
 services:
   appointment:
-    url: ${APPOINTMENT_SERVICE_URL:http://localhost:8083}
+    transport: ${APPOINTMENT_TRANSPORT:http}
+    http:
+      url: ${APPOINTMENT_SERVICE_URL:http://localhost:8083}
+      connect-timeout: ${APPOINTMENT_HTTP_CONNECT_TIMEOUT:2s}
+      read-timeout: ${APPOINTMENT_HTTP_READ_TIMEOUT:3s}
+    grpc:
+      host: ${APPOINTMENT_GRPC_HOST:localhost}
+      port: ${APPOINTMENT_GRPC_PORT:9093}
+      deadline: ${APPOINTMENT_GRPC_DEADLINE:2s}
 
 management:
   endpoints:

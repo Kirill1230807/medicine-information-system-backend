@@ -8,6 +8,7 @@ import org.springframework.boot.flyway.autoconfigure.FlywayAutoConfiguration;
 import org.springframework.boot.hibernate.autoconfigure.HibernateJpaAutoConfiguration;
 import org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration;
 import org.springframework.boot.jdbc.autoconfigure.DataSourceTransactionManagerAutoConfiguration;
+import org.springframework.boot.quartz.autoconfigure.QuartzAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.task.TaskRejectedException;
@@ -18,12 +19,12 @@ import java.util.concurrent.CompletableFuture;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(classes = {AsyncConfig.class, MedicalSideEffectService.class})
-@Import({AsyncConfig.class, MedicalSideEffectService.class})
 @EnableAutoConfiguration(exclude = {
         DataSourceAutoConfiguration.class,
         DataSourceTransactionManagerAutoConfiguration.class,
         HibernateJpaAutoConfiguration.class,
-        FlywayAutoConfiguration.class
+        FlywayAutoConfiguration.class,
+        QuartzAutoConfiguration.class
 })
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class MedicalSideEffectServiceTest {
