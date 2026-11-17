@@ -17,8 +17,6 @@ public class ScheduledMaintenanceService {
 
     private final AppointmentRepository appointmentRepository;
 
-    // Ідемпотентно переводить прострочені записи в статус EXPIRED.
-    // Повторний виклик для вже оновлених записів поверне 0 і нічого не змінить.
     @Transactional
     public int expireOutdatedAppointments(int retentionDays, String targetStatus) {
         ZonedDateTime threshold = ZonedDateTime.now().minusDays(retentionDays);
