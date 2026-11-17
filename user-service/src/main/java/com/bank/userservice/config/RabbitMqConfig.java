@@ -14,7 +14,6 @@ public class RabbitMqConfig {
 
     @Bean
     public TopicExchange medicalExchange() {
-        // durable = true гарантує збереження exchange після перезапуску брокера
         return new TopicExchange(MEDICAL_EXCHANGE, true, false);
     }
 
