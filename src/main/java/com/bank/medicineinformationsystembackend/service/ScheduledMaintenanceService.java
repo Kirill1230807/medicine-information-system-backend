@@ -26,7 +26,6 @@ public class ScheduledMaintenanceService {
         return updatedCount;
     }
 
-    //Формування звіту (імітація роботи із зовнішнім сервісом або БД).
     @Transactional
     public void generateDailySummaryReport(String reportType) {
         log.info("Generating daily report of type: {}", reportType);
