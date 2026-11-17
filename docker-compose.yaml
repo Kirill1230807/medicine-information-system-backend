@@ -35,8 +35,8 @@ services:
     image: rabbitmq:3.13-management
     container_name: medical_rabbitmq
     ports:
-      - "5672:5672"   # AMQP протокол
-      - "15672:15672" # Web UI (guest / guest)
+      - "5672:5672"
+      - "15672:15672"
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
@@ -55,7 +55,7 @@ services:
     container_name: medical_gateway
     restart: on-failure
     ports:
-      - "8080:8080" # Порт для Gateway (припускаємо 8080)
+      - "8080:8080"
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/gateway_db
       - SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_ISSUER_URI=http://keycloak:8080/realms/medical-realm
