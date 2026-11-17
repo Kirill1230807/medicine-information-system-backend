@@ -2,7 +2,9 @@ package com.bank.medicineinformationsystembackend.config;
 
 import com.bank.medicineinformationsystembackend.scheduler.job.AppointmentCleanupJob;
 import com.bank.medicineinformationsystembackend.scheduler.job.DailyReportJob;
+
 import java.util.TimeZone;
+
 import org.quartz.CronScheduleBuilder;
 import org.quartz.JobBuilder;
 import org.quartz.JobDetail;
@@ -30,9 +32,7 @@ public class QuartzConfig {
                 .build();
     }
 
-    /**
-     * Тригер 1 для AppointmentCleanupJob: частий запуск (використовує дефолтні параметри JobDetail).
-     */
+    // Тригер 1 для AppointmentCleanupJob: частий запуск (використовує дефолтні параметри JobDetail).
     @Bean
     public Trigger frequentCleanupTrigger(JobDetail appointmentCleanupJobDetail) {
         return TriggerBuilder.newTrigger()
@@ -45,9 +45,8 @@ public class QuartzConfig {
                 .build();
     }
 
-    /**
-     * Тригер 2 для AppointmentCleanupJob: глибоке нічне очищення (перевизначає retentionDays на 30).
-     */
+
+    // Тригер 2 для AppointmentCleanupJob: глибоке нічне очищення (перевизначає retentionDays на 30).
     @Bean
     public Trigger deepNightlyCleanupTrigger(JobDetail appointmentCleanupJobDetail) {
         return TriggerBuilder.newTrigger()
