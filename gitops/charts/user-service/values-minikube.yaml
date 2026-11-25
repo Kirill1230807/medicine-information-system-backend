@@ -2,7 +2,7 @@ replicaCount: 3
 
 image:
   repository: kirill1230507/medical-user-service
-  tag: "1.2.0"
+  tag: "1.3.0"
   pullPolicy: IfNotPresent
 
 service:
