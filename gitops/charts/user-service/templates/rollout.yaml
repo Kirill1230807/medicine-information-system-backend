@@ -25,6 +25,8 @@ spec:
           env:
             - name: APP_VERSION
               value: {{ .Values.env.APP_VERSION | quote }}
+            - name: FAIL_RATE
+              value: {{ .Values.env.FAIL_RATE | default "0.0" | quote }}
             - name: SPRING_DATASOURCE_URL
               value: {{ .Values.env.DB_URL | quote }}
             - name: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI
@@ -43,21 +45,21 @@ spec:
             httpGet:
               path: /actuator/health/liveness
               port: {{ .Values.service.targetPort }}
-            initialDelaySeconds: 100
+            initialDelaySeconds: 30
             periodSeconds: 10
             failureThreshold: 12
-            readinessProbe:
-              httpGet:
-                path: /actuator/health/readiness
-                port: {{ .Values.service.targetPort }}
-              periodSeconds: 5
-              failureThreshold: 3
-            livenessProbe:
-              httpGet:
-                path: /actuator/health/liveness
-                port: {{ .Values.service.targetPort }}
-              periodSeconds: 10
-              failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: {{ .Values.service.targetPort }}
+            periodSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: {{ .Values.service.targetPort }}
+            periodSeconds: 10
+            failureThreshold: 3
   strategy:
     {{- toYaml .Values.rollout.strategy | nindent 4 }}
 {{- end }}
