@@ -36,9 +36,17 @@ management:
   endpoints:
     web:
       exposure:
-        include: health
+        include: health,info,prometheus
+      metrics:
+        distribution:
+          percentiles-histogram:
+            http.server.requests: true
   health:
     livenessstate:
       enabled: true
     readinessstate:
       enabled: true
+
+app:
+  fail-rate: ${FAIL_RATE:0.0}
+  version: ${APP_VERSION:1.0.0}
