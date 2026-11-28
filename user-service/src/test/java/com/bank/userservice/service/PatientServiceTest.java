@@ -94,7 +94,7 @@ class PatientServiceTest {
         when(patientRepository.save(any(Patient.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // Act
-        Patient result = patientService.createPatient(patient);
+        Patient result = patientService.createPatient(user, patient);
 
         // Assert
         assertNotNull(result);
@@ -118,7 +118,7 @@ class PatientServiceTest {
         // Act & Assert
         RuntimeException exception = assertThrows(
                 RuntimeException.class,
-                () -> patientService.createPatient(patient)
+                () -> patientService.createPatient(user, patient)
         );
         assertEquals("Профіль пацієнта для цього користувача вже існує", exception.getMessage());
         verify(patientRepository, times(1)).findByUserId(userId);
@@ -142,7 +142,7 @@ class PatientServiceTest {
         // Act & Assert
         ResponseStatusException exception = assertThrows(
                 ResponseStatusException.class,
-                () -> patientService.createPatient(patient)
+                () -> patientService.createPatient(user, patient)
         );
         assertTrue(exception.getReason().contains("У обраного користувача немає імені та прізвища"));
         verify(patientRepository, times(1)).findByUserId(userId);

@@ -50,3 +50,43 @@ management:
       enabled: true
     readinessstate:
       enabled: true
+
+resilience4j:
+  retry:
+    instances:
+      appointmentServiceRetry:
+        maxAttempts: 3
+        waitDuration: 500ms
+        enableExponentialBackoff: true
+        exponentialBackoffMultiplier: 2
+        retryExceptions:
+          - com.bank.userservice.exception.RemoteServiceUnavailableException
+          - org.springframework.web.client.ResourceAccessException
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+        ignoreExceptions:
+          - com.bank.userservice.exception.RemoteResourceNotFoundException
+
+  circuitbreaker:
+    instances:
+      appointmentServiceCb:
+        registerHealthIndicator: true
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 6
+        minimumNumberOfCalls: 4
+        failureRateThreshold: 50
+        waitDurationInOpenState: 15s
+        permittedNumberOfCallsInHalfOpenState: 2
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        recordExceptions:
+          - com.bank.userservice.exception.RemoteServiceUnavailableException
+          - org.springframework.web.client.ResourceAccessException
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+        ignoreExceptions:
+          - com.bank.userservice.exception.RemoteResourceNotFoundException
+
+app:
+  scheduling:
+    idempotency-cleanup-rate-ms: 30000
+    idempotency-ttl-hours: 24

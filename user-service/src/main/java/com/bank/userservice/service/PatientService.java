@@ -4,6 +4,7 @@ import com.bank.userservice.aspect.annotation.AuditMedicalAction;
 import com.bank.userservice.aspect.annotation.MaskSensitiveData;
 import com.bank.userservice.aspect.annotation.RetryOnOptimisticLock;
 import com.bank.userservice.entity.Patient;
+import com.bank.userservice.entity.User;
 import com.bank.userservice.event.MedicalDomainEvent;
 import com.bank.userservice.repository.PatientRepository;
 import org.springframework.context.ApplicationEventPublisher;
@@ -47,7 +48,7 @@ public class PatientService {
     //ім'я та прізвище пацієнта не вводяться вручну: вони копіюються з акаунта на момент створення профілю.
     @AuditMedicalAction
     @Transactional
-    public Patient createPatient(Patient patient) {
+    public Patient createPatient(User user, Patient patient) {
         if (patient.getUser() != null && patient.getUser().getId() != null) {
             boolean exists = patientRepository.findByUserId(patient.getUser().getId()).isPresent();
             if (exists) {
